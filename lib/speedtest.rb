@@ -2,6 +2,7 @@ require 'httparty'
 
 require_relative 'speedtest/result'
 require_relative 'speedtest/geo_point'
+require_relative 'speedtest/ring'
 
 module Speedtest
   class Test
@@ -93,6 +94,7 @@ module Speedtest
 
     def uploadthread(url, content)
       page = HTTParty.post(url, :body => { "content" => content })
+      log "upload response body = [#{page.body}]"
       unless page.code / 100 == 2
         error "GET #{url} failed with code #{page.code}"
         Thread.current["error"] = true
