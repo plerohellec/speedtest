@@ -1,24 +1,25 @@
 require 'celluloid/current'
 
 module Speedtest
-  class UploadWorker
+
+  class DownloadWorker
     include Celluloid
 
     def initialize(url, logger)
-      @url = url
       @logger = logger
+      @url = url
     end
 
-    def upload(content)
+    def download
+      @logger.debug "  downloading: #{@url}"
       status = ThreadStatus.new(false, 0)
 
-      page = HTTParty.post(@url, :body => { "content" => content }, timeout: 10)
-      @logger.debug "upload response body = [#{page.body}]"
+      page = HTTParty.get(@url, timeout: 10)
       unless page.code / 100 == 2
         error "GET #{url} failed with code #{page.code}"
         status.error = true
       end
-      status.size = page.body.split('=')[1].to_i
+      status.size = page.body.length
       status
     end
   end

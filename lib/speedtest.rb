@@ -2,20 +2,32 @@ require 'httparty'
 
 require_relative 'speedtest/result'
 require_relative 'speedtest/geo_point'
+require_relative 'speedtest/download_worker'
+require_relative 'speedtest/upload_worker'
 require_relative 'speedtest/ring'
 
 module Speedtest
+  ThreadStatus = Struct.new(:error, :size)
+
   class Test
 
     class FailedTransfer < StandardError; end
 
+    HTTP_PING_TIMEOUT = 5
+
     def initialize(options = {})
-      @download_runs = options[:download_runs]     || 4
-      @upload_runs = options[:upload_runs]         || 4
-      @ping_runs = options[:ping_runs]             || 4
-      @download_sizes = options[:download_sizes]   || [750, 1500]
-      @upload_sizes = options[:upload_sizes]       || [197190, 483960]
+      @min_transfer_secs = options[:min_transfer_secs] || 10
+      @num_threads   = options[:num_threads]           || 4
+      @ping_runs = options[:ping_runs]                 || 4
+      @download_size = options[:download_size]         || 4000
+      @upload_size = options[:upload_size]             || 1_000_000
       @logger = options[:logger]
+      @num_transfers_padding = options[:num_transfers_padding] || 5
+
+      if @num_transfers_padding > @num_threads
+        @num_transfers_padding = @num_threads
+      end
+      @ping_runs = 2 if @ping_runs < 2
     end
 
     def run()
@@ -56,50 +68,32 @@ module Speedtest
       @logger.error msg if @logger
     end
 
-    def downloadthread(url)
-      log "  downloading: #{url}"
-      page = HTTParty.get(url)
-      unless page.code / 100 == 2
-        error "GET #{url} failed with code #{page.code}"
-        Thread.current["error"] = true
-      end
-      Thread.current["downloaded"] = page.body.length
-    end
-
     def download
       log "\nstarting download tests:"
-      threads = []
 
-      start_time = Time.new
-      @download_sizes.each { |size|
-        1.upto(@download_runs) { |i|
-          threads << Thread.new { |thread|
-            downloadthread("#{@server_root}/speedtest/random#{size}x#{size}.jpg")
-          }
-        }
-      }
+      start_time = Time.now
+      futures_ring = Ring.new(@num_threads + @num_transfers_padding)
+      download_url = "#{@server_root}/speedtest/random#{@download_size}x#{@download_size}.jpg"
+      pool = DownloadWorker.pool(size: @num_threads, args: [download_url, @logger])
+      1.upto(@num_threads + @num_transfers_padding).each do |i|
+        futures_ring.append(pool.future.download)
+      end
 
       total_downloaded = 0
-      threads.each { |t|
-        t.join
-        total_downloaded += t["downloaded"]
-        raise FailedTransfer.new("Download failed.") if t["error"] == true
-      }
+      while (future = futures_ring.pop) do
+        status = future.value
+        raise FailedTransfer.new("Download failed.") if status.error == true
+        total_downloaded += status.size
+
+        if Time.now - start_time < @min_transfer_secs
+          futures_ring.append(pool.future.download)
+        end
+      end
 
       total_time = Time.new - start_time
-      log "Took #{total_time} seconds to download #{total_downloaded} bytes in #{threads.length} threads\n"
+      log "Took #{total_time} seconds to download #{total_downloaded} bytes in #{@num_threads} threads\n"
 
       [ total_downloaded * 8, total_time ]
-    end
-
-    def uploadthread(url, content)
-      page = HTTParty.post(url, :body => { "content" => content })
-      log "upload response body = [#{page.body}]"
-      unless page.code / 100 == 2
-        error "GET #{url} failed with code #{page.code}"
-        Thread.current["error"] = true
-      end
-      Thread.current["uploaded"] = page.body.split('=')[1].to_i
     end
 
     def randomString(alphabet, size)
@@ -109,30 +103,30 @@ module Speedtest
     def upload
       log "\nstarting upload tests:"
 
-      data = []
-      @upload_sizes.each { |size|
-        1.upto(@upload_runs) {
-          data << randomString(('A'..'Z').to_a, size)
-        }
-      }
+      data = randomString(('A'..'Z').to_a, @upload_size)
 
-      threads = []
-      start_time = Time.new
-      threads = data.map { |data|
-        Thread.new(data) { |content|
-          log "  uploading size #{content.size}: #{@server_root}/speedtest/upload.php"
-          uploadthread("#{@server_root}/speedtest/upload.php", content)
-        }
-      }
+      start_time = Time.now
+
+      futures_ring = Ring.new(@num_threads + @num_transfers_padding)
+      upload_url = "#{@server_root}/speedtest/upload.php"
+      pool = UploadWorker.pool(size: @num_threads, args: [upload_url, @logger])
+      1.upto(@num_threads + @num_transfers_padding).each do |i|
+        futures_ring.append(pool.future.upload(data))
+      end
 
       total_uploaded = 0
-      threads.each { |t|
-        t.join
-        total_uploaded += t["uploaded"]
-        raise FailedTransfer.new("Upload failed.") if t["error"] == true
-      }
+      while (future = futures_ring.pop) do
+        status = future.value
+        raise FailedTransfer.new("Upload failed.") if status.error == true
+        total_uploaded += status.size
+
+        if Time.now - start_time < @min_transfer_secs
+          futures_ring.append(pool.future.upload(data))
+        end
+      end
+
       total_time = Time.new - start_time
-      log "Took #{total_time} seconds to upload #{total_uploaded} bytes in #{threads.length} threads\n"
+      log "Took #{total_time} seconds to upload #{total_uploaded} bytes in #{@num_threads} threads\n"
 
       # bytes to bits / time = bps
       [ total_uploaded * 8, total_time ]
@@ -169,10 +163,10 @@ module Speedtest
       1.upto(@ping_runs) {
         start = Time.new
         begin
-          page = HTTParty.get("#{server}/speedtest/latency.txt")
+          page = HTTParty.get("#{server}/speedtest/latency.txt", timeout: HTTP_PING_TIMEOUT)
           times << Time.new - start
         rescue Timeout::Error, Net::HTTPNotFound, Errno::ENETUNREACH => e
-          log "#{e.class} #{e}"
+          log "ping error: #{e.class} [#{e}] for #{server}"
           times << 999999
         end
       }
