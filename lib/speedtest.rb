@@ -2,8 +2,7 @@ require 'httparty'
 
 require_relative 'speedtest/result'
 require_relative 'speedtest/geo_point'
-require_relative 'speedtest/download_worker'
-require_relative 'speedtest/upload_worker'
+require_relative 'speedtest/transfer_worker'
 require_relative 'speedtest/ring'
 
 module Speedtest
@@ -68,13 +67,17 @@ module Speedtest
       @logger.error msg if @logger
     end
 
+    def download_url(server_root)
+      "#{server_root}/speedtest/random#{@download_size}x#{@download_size}.jpg"
+    end
+
     def download
       log "\nstarting download tests:"
 
       start_time = Time.now
       futures_ring = Ring.new(@num_threads + @num_transfers_padding)
-      download_url = "#{@server_root}/speedtest/random#{@download_size}x#{@download_size}.jpg"
-      pool = DownloadWorker.pool(size: @num_threads, args: [download_url, @logger])
+      download_url = download_url(@server_root)
+      pool = TransferWorker.pool(size: @num_threads, args: [download_url, @logger])
       1.upto(@num_threads + @num_transfers_padding).each do |i|
         futures_ring.append(pool.future.download)
       end
@@ -100,6 +103,10 @@ module Speedtest
       (1.upto(size)).map { alphabet[rand(alphabet.length)] }.join
     end
 
+    def upload_url(server_root)
+      "#{server_root}/speedtest/upload.php"
+    end
+
     def upload
       log "\nstarting upload tests:"
 
@@ -108,8 +115,8 @@ module Speedtest
       start_time = Time.now
 
       futures_ring = Ring.new(@num_threads + @num_transfers_padding)
-      upload_url = "#{@server_root}/speedtest/upload.php"
-      pool = UploadWorker.pool(size: @num_threads, args: [upload_url, @logger])
+      upload_url = upload_url(@server_root)
+      pool = TransferWorker.pool(size: @num_threads, args: [upload_url, @logger])
       1.upto(@num_threads + @num_transfers_padding).each do |i|
         futures_ring.append(pool.future.upload(data))
       end
@@ -152,10 +159,28 @@ module Speedtest
         :latency => ping(x[:url]),
         :url => x[:url]
         }}.sort_by { |x| x[:latency] }
-      selected = latency_sorted_servers[0]
+
+
+      selected = latency_sorted_servers.detect { |s| validate_server_transfer(s[:url]) }
       log "Automatically selected server: #{selected[:url]} - #{selected[:latency]} ms"
 
       selected
+    end
+
+    def validate_server_transfer(server_root)
+      downloader = TransferWorker.new(download_url(server_root), @logger)
+      status = downloader.download
+      raise RuntimeError if status.error
+
+      uploader = TransferWorker.new(upload_url(server_root), @logger)
+      data = randomString(('A'..'Z').to_a, @upload_size)
+      status = uploader.upload(data)
+      raise RuntimeError if status.error || status.size < @upload_size
+
+      true
+    rescue => e
+      log "Rejecting #{server_root}"
+      false
     end
 
     def ping(server)
