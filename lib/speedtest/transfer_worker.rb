@@ -14,6 +14,11 @@ module Speedtest
       @logger.debug msg
     end
 
+    def error(msg)
+      return unless @logger
+      @logger.error msg
+    end
+
     def download
       log "  downloading: #{@url}"
       status = ThreadStatus.new(false, 0)
@@ -32,7 +37,6 @@ module Speedtest
       status = ThreadStatus.new(false, 0)
 
       page = HTTParty.post(@url, :body => { "content" => content }, timeout: 10)
-      log "upload response body = [#{page.body}]"
       unless page.code / 100 == 2
         error "GET #{@url} failed with code #{page.code}"
         status.error = true

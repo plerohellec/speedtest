@@ -22,6 +22,7 @@ module Speedtest
       @upload_size = options[:upload_size]             || 1_000_000
       @logger = options[:logger]
       @num_transfers_padding = options[:num_transfers_padding] || 5
+      @skip_servers = options[:skip_servers]            || []
 
       if @num_transfers_padding > @num_threads
         @num_transfers_padding = @num_threads
@@ -158,8 +159,15 @@ module Speedtest
         {
         :latency => ping(x[:url]),
         :url => x[:url]
-        }}.sort_by { |x| x[:latency] }
+        }
+      }.sort_by { |x| x[:latency] }
 
+      latency_sorted_servers.reject! do |s|
+        if @skip_servers.include?(s[:url])
+          log "Skipping #{s}"
+          true
+        end
+      end
 
       selected = latency_sorted_servers.detect { |s| validate_server_transfer(s[:url]) }
       log "Automatically selected server: #{selected[:url]} - #{selected[:latency]} ms"
