@@ -2,6 +2,7 @@ require 'httparty'
 
 require_relative 'speedtest/result'
 require_relative 'speedtest/geo_point'
+require_relative 'speedtest/logging'
 require_relative 'speedtest/transfer_worker'
 require_relative 'speedtest/ring'
 
@@ -9,6 +10,7 @@ module Speedtest
   ThreadStatus = Struct.new(:error, :size)
 
   class Test
+    include Logging
 
     class FailedTransfer < StandardError; end
 
@@ -21,12 +23,8 @@ module Speedtest
       @download_size = options[:download_size]         || 4000
       @upload_size = options[:upload_size]             || 1_000_000
       @logger = options[:logger]
-      @num_transfers_padding = options[:num_transfers_padding] || 5
-      @skip_servers = options[:skip_servers]            || []
+      @skip_servers = options[:skip_servers]           || []
 
-      if @num_transfers_padding > @num_threads
-        @num_transfers_padding = @num_threads
-      end
       @ping_runs = 2 if @ping_runs < 2
     end
 
@@ -60,14 +58,6 @@ module Speedtest
       "%.2f #{units[i]}" % speed
     end
 
-    def log(msg)
-      @logger.debug msg if @logger
-    end
-
-    def error(msg)
-      @logger.error msg if @logger
-    end
-
     def download_url(server_root)
       "#{server_root}/speedtest/random#{@download_size}x#{@download_size}.jpg"
     end
@@ -76,10 +66,11 @@ module Speedtest
       log "\nstarting download tests:"
 
       start_time = Time.now
-      futures_ring = Ring.new(@num_threads + @num_transfers_padding)
+      ring_size = @num_threads * 2
+      futures_ring = Ring.new(ring_size)
       download_url = download_url(@server_root)
       pool = TransferWorker.pool(size: @num_threads, args: [download_url, @logger])
-      1.upto(@num_threads + @num_transfers_padding).each do |i|
+      1.upto(ring_size).each do |i|
         futures_ring.append(pool.future.download)
       end
 
@@ -115,10 +106,11 @@ module Speedtest
 
       start_time = Time.now
 
-      futures_ring = Ring.new(@num_threads + @num_transfers_padding)
+      ring_size = @num_threads * 2
+      futures_ring = Ring.new(ring_size)
       upload_url = upload_url(@server_root)
       pool = TransferWorker.pool(size: @num_threads, args: [upload_url, @logger])
-      1.upto(@num_threads + @num_transfers_padding).each do |i|
+      1.upto(ring_size).each do |i|
         futures_ring.append(pool.future.upload(data))
       end
 

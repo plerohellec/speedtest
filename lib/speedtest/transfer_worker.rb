@@ -3,20 +3,11 @@ require 'celluloid/current'
 module Speedtest
   class TransferWorker
     include Celluloid
+    include Logging
 
     def initialize(url, logger)
       @url = url
       @logger = logger
-    end
-
-    def log(msg)
-      return unless @logger
-      @logger.debug msg
-    end
-
-    def error(msg)
-      return unless @logger
-      @logger.error msg
     end
 
     def download

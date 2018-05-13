@@ -24,21 +24,20 @@ require 'speedtest'
 ```
 
 Configure a new test with whatever options you want&mdash;all are optional:
-* download_runs - The number of attempts to download each file
-* upload_runs - The number of attempts to upload each file
+* minimum_transfer_secs - The transfers will continue for at least that many seconds
+* num_threads - The number of threads to perform the transfers in parallel
 * ping_runs - The number of ping attempts to establish latency
-* download_sizes - an array of .jpg dimensions (must be one or more of `[350, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000]`)
-* upload_sizes
+* download_size - jpg dimensions (must be one or more of `[350, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000]`)
+* upload_size - Size of the randomly generated file in bytes
 * logger
 
 ```ruby
-test = Speedtest::Test.new(
-  download_runs: 4,
-    upload_runs: 4,
-    ping_runs: 4,
-    download_sizes: [750, 1500],
-    upload_sizes: [10000, 400000],
-    logger: Logger.new(STDOUT)
+speedtest = Speedtest::Test.new(min_transfer_secs: 5,
+                                download_size: 500,
+                                upload_size: 10_000,
+                                num_threads: 4,
+                                logger: Logger.new(STDOUT),
+                                skip_servers: "http://www.github.com")
  )
  => #<Speedtest::Test:0x007fac5ac9dca0 @download_runs=4, @upload_runs=4, @ping_runs=4, @download_sizes=[750, 1500], @upload_sizes=[10000, 400000], @debug=true>
 ```
