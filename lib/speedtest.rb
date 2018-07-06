@@ -24,12 +24,15 @@ module Speedtest
       @upload_size = options[:upload_size]             || 1_000_000
       @logger = options[:logger]
       @skip_servers = options[:skip_servers]           || []
+      @skip_latency_min_ms = options[:skip_latency_min_ms] || 0
 
       @ping_runs = 2 if @ping_runs < 2
     end
 
     def run()
       server = pick_server
+      raise FailedTransfer, "Failed to find a suitable server" unless server
+
       @server_root = server[:url]
       log "Server #{@server_root}"
 
@@ -147,7 +150,7 @@ module Speedtest
       .sort_by { |x| x[:distance] }
 
       # sort the nearest 10 by download latency
-      latency_sorted_servers = sorted_servers[0..9].map { |x|
+      latency_sorted_servers = sorted_servers[0..20].map { |x|
         {
         :latency => ping(x[:url]),
         :url => x[:url]
@@ -155,14 +158,27 @@ module Speedtest
       }.sort_by { |x| x[:latency] }
 
       latency_sorted_servers.reject! do |s|
-        if @skip_servers.include?(s[:url])
-          log "Skipping #{s}"
-          true
+        skip = false
+
+        if s[:latency] < @skip_latency_min_ms
+          log "Skipping #{s} because latency (#{s[:latency]}) is below threshold (#{@skip_latency_min_ms})"
+          skip = true
         end
+
+        if @skip_servers.include?(s[:url])
+          log "Skipping #{s} because url in skip list"
+          skip = true
+        end
+
+        skip
       end
 
       selected = latency_sorted_servers.detect { |s| validate_server_transfer(s[:url]) }
-      log "Automatically selected server: #{selected[:url]} - #{selected[:latency]} ms"
+      if selected
+        log "Automatically selected server: #{selected[:url]} - #{selected[:latency]} ms"
+      else
+        error "Cannot find any server matching the requirements"
+      end
 
       selected
     end
@@ -202,6 +218,6 @@ module Speedtest
 end
 
 if __FILE__ == $PROGRAM_NAME
-  x = Speedtest::Test.new(ARGV)
+  x = Speedtest::Test.new(min_transfer_secs: 10, download_size: 1000, upload_size: 100_000, num_threads: 10, logger: Logger.new(STDOUT), skip_latency_min_ms: 40)
   x.run
 end
