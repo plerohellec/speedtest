@@ -14,12 +14,17 @@ module Speedtest
       log "  downloading: #{@url}"
       status = ThreadStatus.new(false, 0)
 
-      page = HTTParty.get(@url, timeout: 10)
-      unless page.code / 100 == 2
-        error "GET #{@url} failed with code #{page.code}"
+      begin
+        page = HTTParty.get(@url, timeout: 10)
+        unless page.code / 100 == 2
+          error "GET #{@url} failed with code #{page.code}"
+          status.error = true
+        end
+        status.size = page.body.length
+      rescue Timeout::Error, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH => e
+        error "GET #{@url} failed with exception #{e.class}"
         status.error = true
       end
-      status.size = page.body.length
       status
     end
 
@@ -27,12 +32,17 @@ module Speedtest
       log "  uploading: #{@url}"
       status = ThreadStatus.new(false, 0)
 
-      page = HTTParty.post(@url, :body => { "content" => content }, timeout: 10)
-      unless page.code / 100 == 2
-        error "GET #{@url} failed with code #{page.code}"
+      begin
+        page = HTTParty.post(@url, :body => { "content" => content }, timeout: 10)
+        unless page.code / 100 == 2
+          error "POST #{@url} failed with code #{page.code}"
+          status.error = true
+        end
+        status.size = page.body.split('=')[1].to_i
+      rescue Timeout::Error, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH => e
+        error "POST #{@url} failed with exception #{e.class}"
         status.error = true
       end
-      status.size = page.body.split('=')[1].to_i
       status
     end
   end
