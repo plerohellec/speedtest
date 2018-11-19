@@ -206,7 +206,7 @@ module Speedtest
         begin
           page = HTTParty.get("#{server}/speedtest/latency.txt", timeout: HTTP_PING_TIMEOUT)
           times << Time.new - start
-        rescue Timeout::Error, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH => e
+        rescue Timeout::Error, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH, Errno::EADDRNOTAVAIL => e
           log "ping error: #{e.class} [#{e}] for #{server}"
           times << 999999
         end
