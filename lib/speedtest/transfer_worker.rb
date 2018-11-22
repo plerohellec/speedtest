@@ -21,7 +21,7 @@ module Speedtest
           status.error = true
         end
         status.size = page.body.length
-      rescue Timeout::Error, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH, Errno::EADDRNOTAVAIL => e
+      rescue Timeout::Error, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH, Errno::EADDRNOTAVAIL, Errno::ECONNREFUSED => e
         error "GET #{@url} failed with exception #{e.class}"
         status.error = true
       end
@@ -39,7 +39,7 @@ module Speedtest
           status.error = true
         end
         status.size = page.body.split('=')[1].to_i
-      rescue Timeout::Error, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH, Errno::EADDRNOTAVAIL => e
+      rescue Timeout::Error, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH, Errno::EADDRNOTAVAIL, Errno::ECONNREFUSED => e
         error "POST #{@url} failed with exception #{e.class}"
         status.error = true
       end
