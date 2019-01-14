@@ -25,6 +25,7 @@ module Speedtest
       @logger = options[:logger]
       @skip_servers = options[:skip_servers]           || []
       @skip_latency_min_ms = options[:skip_latency_min_ms] || 0
+      @select_server_url = options[:select_server_url]         
 
       @ping_runs = 2 if @ping_runs < 2
     end
@@ -142,12 +143,24 @@ module Speedtest
       log "Your IP: #{ip}\nYour coordinates: #{orig}\n"
 
       page = HTTParty.get("http://www.speedtest.net/speedtest-servers.php")
-      sorted_servers=page.body.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).map { |x| {
+      sorted_servers = page.body.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).map { |x| {
         :distance => orig.distance(GeoPoint.new(x[1],x[2])),
         :url => x[0].split(/(http:\/\/.*)\/speedtest.*/)[1]
       } }
       .reject { |x| x[:url].nil? } # reject 'servers' without a domain
       .sort_by { |x| x[:distance] }
+
+      if @select_server_url
+        server = sorted_servers.detect { |x| x[:url] == @select_server_url }
+        if server
+          server[:latency] = ping(server[:url])
+          log "Found selected server: #{server[:url]} latency=#{server[:latency]} distance=#{server[:distance]}"
+          return server
+        else
+          error "Cannot find server #{@select_server_url}"
+          return nil
+        end
+      end
 
       # sort the nearest 10 by download latency
       latency_sorted_servers = sorted_servers[0..20].map { |x|
