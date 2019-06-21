@@ -25,7 +25,7 @@ module Speedtest
       @logger = options[:logger]
       @skip_servers = options[:skip_servers]           || []
       @skip_latency_min_ms = options[:skip_latency_min_ms] || 0
-      @select_server_url = options[:select_server_url]         
+      @select_server_url = options[:select_server_url]
 
       @ping_runs = 2 if @ping_runs < 2
     end
@@ -137,18 +137,11 @@ module Speedtest
     end
 
     def pick_server
-      page = HTTParty.get("http://www.speedtest.net/speedtest-config.php")
-      ip,lat,lon = page.body.scan(/<client ip="([^"]*)" lat="([^"]*)" lon="([^"]*)"/)[0]
-      orig = GeoPoint.new(lat, lon)
-      log "Your IP: #{ip}\nYour coordinates: #{orig}\n"
-
-      page = HTTParty.get("http://www.speedtest.net/speedtest-servers.php")
-      sorted_servers = page.body.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).map { |x| {
-        :distance => orig.distance(GeoPoint.new(x[1],x[2])),
-        :url => x[0].split(/(http:\/\/.*)\/speedtest.*/)[1]
-      } }
-      .reject { |x| x[:url].nil? } # reject 'servers' without a domain
-      .sort_by { |x| x[:distance] }
+      page = HTTParty.get("https://www.speedtest.net/api/js/servers?engine=js&https_functional=1")
+      servers = JSON.load(page.body)
+      sorted_servers = servers.sort_by { |server| server['distance'] }
+      sorted_servers = sorted_servers.reject { |server| server['url'].nil? }
+      sorted_servers = sorted_servers.map { |server| { url: server['url'] } }
 
       if @select_server_url
         server = sorted_servers.detect { |x| x[:url] == @select_server_url }
