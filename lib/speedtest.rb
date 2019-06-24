@@ -156,7 +156,7 @@ module Speedtest
       end
 
       # sort the nearest 10 by download latency
-      latency_sorted_servers = sorted_servers[0..20].map { |x|
+      latency_sorted_servers = sorted_servers[0..30].map { |x|
         {
         :latency => ping(x[:url]),
         :url => x[:url]
