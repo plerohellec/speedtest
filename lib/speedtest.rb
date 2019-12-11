@@ -13,6 +13,7 @@ module Speedtest
     include Logging
 
     class FailedTransfer < StandardError; end
+    class NoServerFound < StandardError; end
 
     HTTP_PING_TIMEOUT = 5
 
@@ -32,7 +33,7 @@ module Speedtest
 
     def run()
       server = pick_server
-      raise FailedTransfer, "Failed to find a suitable server" unless server
+      raise NoServerFound, "Failed to find a suitable server" unless server
 
       @server_root = server[:url]
       log "Server #{@server_root}"
@@ -144,15 +145,8 @@ module Speedtest
       sorted_servers = sorted_servers.map { |server| { url: server['url'] } }
 
       if @select_server_url
-        server = sorted_servers.detect { |x| x[:url] == @select_server_url }
-        if server
-          server[:latency] = ping(server[:url])
-          log "Found selected server: #{server[:url]} latency=#{server[:latency]} distance=#{server[:distance]}"
-          return server
-        else
-          error "Cannot find server #{@select_server_url}"
-          return nil
-        end
+        log "Using selected server #{@select_server_url}"
+        sorted_servers = [ { url: @select_server_url } ]
       end
 
       # sort the nearest 10 by download latency
@@ -212,7 +206,7 @@ module Speedtest
         begin
           page = HTTParty.get("#{server}/speedtest/latency.txt", timeout: HTTP_PING_TIMEOUT)
           times << Time.new - start
-        rescue Timeout::Error, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH, Errno::EADDRNOTAVAIL, Errno::ECONNREFUSED => e
+        rescue Timeout::Error, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH, Errno::EADDRNOTAVAIL, Errno::ECONNREFUSED, Errno::EHOSTUNREACH => e
           log "ping error: #{e.class} [#{e}] for #{server}"
           times << 999999
         end
