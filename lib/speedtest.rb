@@ -101,7 +101,7 @@ module Speedtest
     end
 
     def upload_url(server_root)
-      "#{server_root}/speedtest/upload.php"
+      "#{server_root}"
     end
 
     def upload
