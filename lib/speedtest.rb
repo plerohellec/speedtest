@@ -101,7 +101,11 @@ module Speedtest
     end
 
     def upload_url(server_root)
-      "#{server_root}"
+      if server_root =~ /upload.php$/
+        server_root
+      else
+        "#{server_root}/speedtest/upload.php"
+      end
     end
 
     def upload
@@ -137,23 +141,56 @@ module Speedtest
       [ total_uploaded * 8, total_time ]
     end
 
-    def pick_server
+    def fetch_close_server_list
       page = HTTParty.get("https://www.speedtest.net/api/js/servers?engine=js&https_functional=1")
       servers = JSON.load(page.body)
-      sorted_servers = servers.sort_by { |server| server['distance'] }
-      sorted_servers = sorted_servers.reject { |server| server['url'].nil? }
-      sorted_servers = sorted_servers.map { |server| { url: server['url'] } }
+      servers.sort_by! { |server| server['distance'] }
+      servers.reject! { |server| server['url'].nil? }
+      servers.map { |server| { url: server['url'] } }
+    end
 
+    def fetch_full_server_list
+      page = HTTParty.get("https://www.speedtest.net/speedtest-config.php")
+      ip,lat,lon = page.body.scan(/<client ip="([^"]*)" lat="([^"]*)" lon="([^"]*)"/)[0]
+      orig = GeoPoint.new(lat, lon)
+      log "Your IP: #{ip}\nYour coordinates: #{orig}\n"
+
+      page = HTTParty.get("https://c.speedtest.net/speedtest-servers-static.php")
+      log "Calculating distances in static server list"
+      sorted_servers = page.body.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).map { |x| {
+        :distance => orig.distance(GeoPoint.new(x[1],x[2])),
+        :url => x[0].split(/(http:\/\/.*)\/speedtest.*/)[1]
+      } }
+      log "Done calculating distances"
+      sorted_servers.reject! { |x| x[:url].nil? }
+      sorted_servers.sort_by! { |x| x[:distance] }
+    end
+
+    def pick_server
       if @select_server_url
         log "Using selected server #{@select_server_url}"
-        sorted_servers = [ { url: @select_server_url } ]
+        servers = [ { url: @select_server_url } ]
+        return find_best_server(servers)
       end
 
-      # sort the nearest 10 by download latency
-      latency_sorted_servers = sorted_servers[0..30].map { |x|
+      servers = fetch_close_server_list
+      selected = find_best_server(servers)
+
+      unless selected
+        log "Fetching and sorting full static list of servers"
+        servers = fetch_full_server_list
+        selected = find_best_server(servers)
+      end
+
+      selected
+    end
+
+    def find_best_server(servers)
+      log "calculating ping latency for closest 30 servers"
+      latency_sorted_servers = servers[0..30].map { |x|
         {
-        :latency => ping(x[:url]),
-        :url => x[:url]
+          :latency => ping(x[:url]),
+          :url => x[:url]
         }
       }.sort_by { |x| x[:latency] }
 
@@ -172,6 +209,8 @@ module Speedtest
 
         skip
       end
+
+      log "Sorted clean servers = #{latency_sorted_servers.inspect}"
 
       selected = latency_sorted_servers.detect { |s| validate_server_transfer(s[:url]) }
       if selected
@@ -218,6 +257,6 @@ module Speedtest
 end
 
 if __FILE__ == $PROGRAM_NAME
-  x = Speedtest::Test.new(min_transfer_secs: 10, download_size: 1000, upload_size: 100_000, num_threads: 10, logger: Logger.new(STDOUT), skip_latency_min_ms: 40)
+  x = Speedtest::Test.new(min_transfer_secs: 10, download_size: 1000, upload_size: 100_000, num_threads: 10, logger: Logger.new(STDOUT), skip_latency_min_ms: 7)
   x.run
 end
