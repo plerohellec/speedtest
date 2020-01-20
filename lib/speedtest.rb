@@ -79,10 +79,15 @@ module Speedtest
         futures_ring.append(pool.future.download)
       end
 
+      failed = false
       total_downloaded = 0
       while (future = futures_ring.pop) do
         status = future.value
-        raise FailedTransfer.new("Download failed.") if status.error == true
+        if status.error == true
+          log "Failed download from #{@server_root}"
+          failed = true
+          break
+        end
         total_downloaded += status.size
 
         if Time.now - start_time < @min_transfer_secs
@@ -91,7 +96,13 @@ module Speedtest
       end
 
       total_time = Time.new - start_time
-      log "Took #{total_time} seconds to download #{total_downloaded} bytes in #{@num_threads} threads\n"
+
+      if failed
+        total_time = 1
+        total_downloaded = 0
+      else
+        log "Took #{total_time} seconds to download #{total_downloaded} bytes in #{@num_threads} threads\n"
+      end
 
       [ total_downloaded * 8, total_time ]
     end
@@ -123,10 +134,15 @@ module Speedtest
         futures_ring.append(pool.future.upload(data))
       end
 
+      failed = false
       total_uploaded = 0
       while (future = futures_ring.pop) do
         status = future.value
-        raise FailedTransfer.new("Upload failed.") if status.error == true
+        if status.error == true
+          log "Failed upload to #{@server_root}"
+          failed = true
+          break
+        end
         total_uploaded += status.size
 
         if Time.now - start_time < @min_transfer_secs
@@ -135,7 +151,13 @@ module Speedtest
       end
 
       total_time = Time.new - start_time
-      log "Took #{total_time} seconds to upload #{total_uploaded} bytes in #{@num_threads} threads\n"
+
+      if failed
+        total_time = 1
+        total_uploaded = 0
+      else
+        log "Took #{total_time} seconds to upload #{total_uploaded} bytes in #{@num_threads} threads\n"
+      end
 
       # bytes to bits / time = bps
       [ total_uploaded * 8, total_time ]
