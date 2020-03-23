@@ -27,11 +27,12 @@ module Speedtest
       @skip_servers = options[:skip_servers]           || []
       @skip_latency_min_ms = options[:skip_latency_min_ms] || 0
       @select_server_url = options[:select_server_url]
+      @select_server_list = options[:select_server_list]
 
       @ping_runs = 2 if @ping_runs < 2
     end
 
-    def run()
+    def run
       server = pick_server
       raise NoServerFound, "Failed to find a suitable server" unless server
 
@@ -50,7 +51,8 @@ module Speedtest
 
       Result.new(:server => @server_root, :latency => latency,
         download_size: download_size, download_time: download_time,
-        upload_size: upload_size, upload_time: upload_time)
+        upload_size: upload_size, upload_time: upload_time,
+        server_list: @server_list)
     end
 
     def pretty_speed(speed)
@@ -163,6 +165,17 @@ module Speedtest
       [ total_uploaded * 8, total_time ]
     end
 
+    def fetch_server_list(type)
+      case type
+      when 'full'
+        fetch_full_server_list
+      when 'close'
+        fetch_close_server_list
+      else
+        raise "Unknown server list #{type}"
+      end
+    end
+
     def fetch_close_server_list
       page = HTTParty.get("https://www.speedtest.net/api/js/servers?engine=js&https_functional=1")
       servers = JSON.load(page.body)
@@ -192,18 +205,24 @@ module Speedtest
       if @select_server_url
         log "Using selected server #{@select_server_url}"
         servers = [ { url: @select_server_url } ]
-        return find_best_server(servers)
-      end
-
-      servers = fetch_close_server_list
-      selected = find_best_server(servers)
-
-      unless selected
-        log "Fetching and sorting full static list of servers"
-        servers = fetch_full_server_list
         selected = find_best_server(servers)
+        @server_list = 'selected' if selected
       end
 
+      if @select_server_list
+        log "Using #{@select_server_list} list of servers (requested)"
+        selected ||= fetch_list_and_select_server(@select_server_list)
+      end
+
+      selected ||= fetch_list_and_select_server('close')
+      selected ||= fetch_list_and_select_server('full')
+    end
+
+    def fetch_list_and_select_server(server_list)
+      log "Using #{server_list} list of servers"
+      servers = fetch_server_list(server_list)
+      selected = find_best_server(servers)
+      @server_list = server_list if selected
       selected
     end
 
