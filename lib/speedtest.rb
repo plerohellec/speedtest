@@ -41,18 +41,25 @@ module Speedtest
 
       latency = server[:latency]
 
-      download_size, download_time = download
+      download_size, download_time = download(@server_root)
       download_rate = download_size / download_time
       log "Download: #{pretty_speed download_rate}"
 
-      upload_size, upload_time = upload
+      upload_size, upload_time = upload(@server_root)
       upload_rate = upload_size / upload_time
       log "Upload: #{pretty_speed upload_rate}"
 
-      Result.new(:server => @server_root, :latency => latency,
+      server_fqdn = fqdn(@server_root)
+      log "server_fqdn = #{server_fqdn}"
+
+      Result.new(:server => server_fqdn, :latency => latency,
         download_size: download_size, download_time: download_time,
         upload_size: upload_size, upload_time: upload_time,
         server_list: @server_list)
+    end
+
+    def fqdn(url)
+      url.gsub(/https?:\/\/([^\/\:]+)[\/\:].*/, '\1')
     end
 
     def pretty_speed(speed)
@@ -69,13 +76,13 @@ module Speedtest
       "#{server_root}/speedtest/random#{@download_size}x#{@download_size}.jpg"
     end
 
-    def download
+    def download(server_root)
       log "\nstarting download tests:"
 
       start_time = Time.now
       ring_size = @num_threads * 2
       futures_ring = Ring.new(ring_size)
-      download_url = download_url(@server_root)
+      download_url = download_url(server_root)
       pool = TransferWorker.pool(size: @num_threads, args: [download_url, @logger])
       1.upto(ring_size).each do |i|
         futures_ring.append(pool.future.download)
@@ -86,7 +93,7 @@ module Speedtest
       while (future = futures_ring.pop) do
         status = future.value
         if status.error == true
-          log "Failed download from #{@server_root}"
+          log "Failed download from #{server_root}"
           failed = true
           break
         end
@@ -121,7 +128,7 @@ module Speedtest
       end
     end
 
-    def upload
+    def upload(server_root)
       log "\nstarting upload tests:"
 
       data = randomString(('A'..'Z').to_a, @upload_size)
@@ -130,7 +137,7 @@ module Speedtest
 
       ring_size = @num_threads * 2
       futures_ring = Ring.new(ring_size)
-      upload_url = upload_url(@server_root)
+      upload_url = upload_url(server_root)
       pool = TransferWorker.pool(size: @num_threads, args: [upload_url, @logger])
       1.upto(ring_size).each do |i|
         futures_ring.append(pool.future.upload(data))
@@ -141,7 +148,7 @@ module Speedtest
       while (future = futures_ring.pop) do
         status = future.value
         if status.error == true
-          log "Failed upload to #{@server_root}"
+          log "Failed upload to #{server_root}"
           failed = true
           break
         end
@@ -167,16 +174,16 @@ module Speedtest
 
     def fetch_server_list(type)
       case type
-      when 'full'
-        fetch_full_server_list
-      when 'close'
-        fetch_close_server_list
+      when 'static'
+        fetch_static_server_list
+      when 'dynamic'
+        fetch_dynamic_server_list
       else
         raise "Unknown server list #{type}"
       end
     end
 
-    def fetch_close_server_list
+    def fetch_dynamic_server_list
       page = HTTParty.get("https://www.speedtest.net/api/js/servers?engine=js&https_functional=1")
       servers = JSON.load(page.body)
       servers.sort_by! { |server| server['distance'] }
@@ -184,7 +191,7 @@ module Speedtest
       servers.map { |server| { url: server['url'] } }
     end
 
-    def fetch_full_server_list
+    def fetch_static_server_list
       page = HTTParty.get("https://www.speedtest.net/speedtest-config.php")
       ip,lat,lon = page.body.scan(/<client ip="([^"]*)" lat="([^"]*)" lon="([^"]*)"/)[0]
       orig = GeoPoint.new(lat, lon)
@@ -214,8 +221,8 @@ module Speedtest
         selected ||= fetch_list_and_select_server(@select_server_list)
       end
 
-      selected ||= fetch_list_and_select_server('close')
-      selected ||= fetch_list_and_select_server('full')
+      selected ||= fetch_list_and_select_server('dynamic')
+      selected ||= fetch_list_and_select_server('static')
     end
 
     def fetch_list_and_select_server(server_list)
@@ -243,7 +250,7 @@ module Speedtest
           skip = true
         end
 
-        if @skip_servers.include?(s[:url])
+        if @skip_servers.include?(fqdn(s[:url]))
           log "Skipping #{s} because url in skip list"
           skip = true
         end
