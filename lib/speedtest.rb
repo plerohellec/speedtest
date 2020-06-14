@@ -28,6 +28,7 @@ module Speedtest
       @skip_latency_min_ms = options[:skip_latency_min_ms] || 0
       @select_server_url = options[:select_server_url]
       @select_server_list = options[:select_server_list]
+      @custom_server_list_url = options[:custom_server_list_url]
 
       @ping_runs = 2 if @ping_runs < 2
     end
@@ -177,7 +178,9 @@ module Speedtest
       when 'static'
         fetch_static_server_list
       when 'dynamic'
-        fetch_dynamic_server_list
+        fetch_custom_server_list("https://c.speedtest.net/speedtest-servers-static.php")
+      when 'custom'
+        fetch_custom_server_list(@custom_server_list_url)
       else
         raise "Unknown server list #{type}"
       end
@@ -191,7 +194,7 @@ module Speedtest
       servers.map { |server| { url: server['url'] } }
     end
 
-    def fetch_static_server_list
+    def fetch_custom_server_list(url)
       page = HTTParty.get("https://www.speedtest.net/speedtest-config.php")
       ip,lat,lon = page.body.scan(/<client ip="([^"]*)" lat="([^"]*)" lon="([^"]*)"/)[0]
       if ENV['IPSTACK_KEY']
@@ -206,7 +209,7 @@ module Speedtest
       orig = GeoPoint.new(lat, lon)
       log "Your IP: #{ip}\nYour coordinates: #{orig}\n"
 
-      page = HTTParty.get("https://c.speedtest.net/speedtest-servers-static.php")
+      page = HTTParty.get(url)
       log "Calculating distances in static server list"
       sorted_servers = page.body.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).map { |x| {
         :distance => orig.distance(GeoPoint.new(x[1],x[2])),
