@@ -97,10 +97,9 @@ module Speedtest
         status = future.value
         if status.error == true
           log "Failed download from #{server_root}"
-          failed = true
-          break
+        else
+          total_downloaded += status.size
         end
-        total_downloaded += status.size
 
         if Time.now - start_time < @min_transfer_secs
           futures_ring.append(pool.future.download)
@@ -152,10 +151,9 @@ module Speedtest
         status = future.value
         if status.error == true
           log "Failed upload to #{server_root}"
-          failed = true
-          break
+        else
+          total_uploaded += status.size
         end
-        total_uploaded += status.size
 
         if Time.now - start_time < @min_transfer_secs
           futures_ring.append(pool.future.upload(data))
