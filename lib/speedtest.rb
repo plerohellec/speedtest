@@ -29,6 +29,8 @@ module Speedtest
       @select_server_url = options[:select_server_url]
       @select_server_list = options[:select_server_list] # dynamic, static, or custom
       @custom_server_list_url = options[:custom_server_list_url] # needed if select_server_list is custom
+      @ip_latitude = options[:ip_latitude]
+      @ip_longitude = options[:ip_longitude]
 
       @ping_runs = 2 if @ping_runs < 2
     end
@@ -222,13 +224,12 @@ module Speedtest
     def fetch_custom_server_list(url)
       page = HTTParty.get("https://www.speedtest.net/speedtest-config.php")
       ip,lat,lon = page.body.scan(/<client ip="([^"]*)" lat="([^"]*)" lon="([^"]*)"/)[0]
-      if ENV['IPSTACK_KEY']
-        ips_lat, ips_lon = find_lat_long_from_ipstack(ip)
-        if ips_lat
-          log "Using geo IP from ipstack (#{ips_lat}, #{ips_lon})"
-          lat = ips_lat
-          lon = ips_lon
-        end
+      if @ip_latitude && @ip_longitude
+        log "Using latitude and longitude provided in parameters"
+        lat = @ip_latitude
+        long = @ip_longitude
+      else
+        log "Using latitude and longitude provided by speedtest"
       end
 
       orig = GeoPoint.new(lat, lon)
@@ -244,17 +245,6 @@ module Speedtest
       log "Done calculating distances"
       sorted_servers.reject! { |x| x[:url].nil? }
       sorted_servers.sort_by! { |x| x[:distance] }
-    end
-
-    def find_lat_long_from_ipstack(ip)
-      page = HTTParty.get("http://api.ipstack.com/#{ip}?access_key=#{ENV['IPSTACK_KEY']}")
-      if page.code.to_s != '200'
-        log "ipstack failed with code #{page.code}"
-        return
-      end
-
-      data = JSON.load(page.body)
-      return data['latitude'], data['longitude']
     end
 
     def find_best_server(servers)
