@@ -18,3 +18,6 @@ speedtest = Speedtest::Test.new(min_transfer_secs: 5,
 results = speedtest.run
 ap results
 
+# Use custom list of speedtest servers
+# IPSTACK_KEY=XXXXXXXXXXXX SPEEDTEST_URL='https://vpsbenchmarks.s3.amazonaws.com/misc/speedtest-us-west.xml' SELECT_SERVER_LIST=custom be bin/speedtest.rb
+

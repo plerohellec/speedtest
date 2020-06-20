@@ -27,8 +27,8 @@ module Speedtest
       @skip_servers = options[:skip_servers]           || []
       @skip_latency_min_ms = options[:skip_latency_min_ms] || 0
       @select_server_url = options[:select_server_url]
-      @select_server_list = options[:select_server_list]
-      @custom_server_list_url = options[:custom_server_list_url]
+      @select_server_list = options[:select_server_list] # dynamic, static, or custom
+      @custom_server_list_url = options[:custom_server_list_url] # needed if select_server_list is custom
 
       @ping_runs = 2 if @ping_runs < 2
     end
