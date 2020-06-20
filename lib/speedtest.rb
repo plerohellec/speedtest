@@ -227,7 +227,7 @@ module Speedtest
       if @ip_latitude && @ip_longitude
         log "Using latitude and longitude provided in parameters"
         lat = @ip_latitude
-        long = @ip_longitude
+        lon = @ip_longitude
       else
         log "Using latitude and longitude provided by speedtest"
       end
