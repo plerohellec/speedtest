@@ -173,12 +173,37 @@ module Speedtest
       [ total_uploaded * 8, total_time ]
     end
 
+    def pick_server
+      if @select_server_url
+        log "Using selected server #{@select_server_url}"
+        servers = [ { url: @select_server_url } ]
+        selected = find_best_server(servers)
+        @server_list = 'selected' if selected
+      end
+
+      if @select_server_list
+        log "Using #{@select_server_list} list of servers (requested)"
+        selected ||= fetch_list_and_select_server(@select_server_list)
+      end
+
+      selected ||= fetch_list_and_select_server('dynamic')
+      selected ||= fetch_list_and_select_server('static')
+    end
+
+    def fetch_list_and_select_server(server_list)
+      log "Using #{server_list} list of servers"
+      servers = fetch_server_list(server_list)
+      selected = find_best_server(servers)
+      @server_list = server_list if selected
+      selected
+    end
+
     def fetch_server_list(type)
       case type
       when 'static'
-        fetch_static_server_list
-      when 'dynamic'
         fetch_custom_server_list("https://c.speedtest.net/speedtest-servers-static.php")
+      when 'dynamic'
+        fetch_dynamic_server_list
       when 'custom'
         fetch_custom_server_list(@custom_server_list_url)
       else
@@ -209,6 +234,7 @@ module Speedtest
       orig = GeoPoint.new(lat, lon)
       log "Your IP: #{ip}\nYour coordinates: #{orig}\n"
 
+      log "Fetching server list url=#{url}"
       page = HTTParty.get(url)
       log "Calculating distances in static server list"
       sorted_servers = page.body.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).map { |x| {
@@ -229,31 +255,6 @@ module Speedtest
 
       data = JSON.load(page.body)
       return data['latitude'], data['longitude']
-    end
-
-    def pick_server
-      if @select_server_url
-        log "Using selected server #{@select_server_url}"
-        servers = [ { url: @select_server_url } ]
-        selected = find_best_server(servers)
-        @server_list = 'selected' if selected
-      end
-
-      if @select_server_list
-        log "Using #{@select_server_list} list of servers (requested)"
-        selected ||= fetch_list_and_select_server(@select_server_list)
-      end
-
-      selected ||= fetch_list_and_select_server('dynamic')
-      selected ||= fetch_list_and_select_server('static')
-    end
-
-    def fetch_list_and_select_server(server_list)
-      log "Using #{server_list} list of servers"
-      servers = fetch_server_list(server_list)
-      selected = find_best_server(servers)
-      @server_list = server_list if selected
-      selected
     end
 
     def find_best_server(servers)
