@@ -44,7 +44,8 @@ module Speedtest
 
       latency = server[:latency]
 
-      download_size, download_time = download(@server_root)
+      #download_size, download_time = download(@server_root)
+      download_size, download_time = 0, 1
       download_rate = download_size / download_time
       log "Download: #{pretty_speed download_rate}"
 
@@ -123,6 +124,11 @@ module Speedtest
       (1.upto(size)).map { alphabet[rand(alphabet.length)] }.join
     end
 
+    def upload_data(size)
+      s = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      s * (size / 36.0)
+    end
+
     def upload_url(server_root)
       if server_root =~ /upload.php$/
         server_root
@@ -134,7 +140,10 @@ module Speedtest
     def upload(server_root)
       log "\nstarting upload tests:"
 
-      data = randomString(('A'..'Z').to_a, @upload_size)
+      data = []
+      data << upload_data(524288)
+      data << upload_data(1048576)
+      data << upload_data(7340032)
 
       start_time = Time.now
 
@@ -143,13 +152,16 @@ module Speedtest
       upload_url = upload_url(server_root)
       pool = TransferWorker.pool(size: @num_threads, args: [upload_url, @logger])
       1.upto(ring_size).each do |i|
-        futures_ring.append(pool.future.upload(data))
+        futures_ring.append(pool.future.upload(data[rand(data.size)]))
       end
 
       failed = false
       total_uploaded = 0
+      total_wait = 0
       while (future = futures_ring.pop) do
+        start_wait = Time.now
         status = future.value
+        total_wait += Time.now - start_wait
         if status.error == true
           log "Failed upload to #{server_root}"
           failed = true
@@ -158,7 +170,7 @@ module Speedtest
         total_uploaded += status.size
 
         if Time.now - start_time < @min_transfer_secs
-          futures_ring.append(pool.future.upload(data))
+          futures_ring.append(pool.future.upload(data[rand(data.size)]))
         end
       end
 
@@ -170,6 +182,8 @@ module Speedtest
       else
         log "Took #{total_time} seconds to upload #{total_uploaded} bytes in #{@num_threads} threads\n"
       end
+
+      log "total_wait = #{total_wait}"
 
       # bytes to bits / time = bps
       [ total_uploaded * 8, total_time ]
