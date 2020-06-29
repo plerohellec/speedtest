@@ -27,8 +27,10 @@ module Speedtest
       @skip_servers = options[:skip_servers]           || []
       @skip_latency_min_ms = options[:skip_latency_min_ms] || 0
       @select_server_url = options[:select_server_url]
-      @select_server_list = options[:select_server_list]
-      @custom_server_list_url = options[:custom_server_list_url]
+      @select_server_list = options[:select_server_list] # dynamic, static, or custom
+      @custom_server_list_url = options[:custom_server_list_url] # needed if select_server_list is custom
+      @ip_latitude = options[:ip_latitude]
+      @ip_longitude = options[:ip_longitude]
 
       @ping_runs = 2 if @ping_runs < 2
     end
@@ -43,6 +45,7 @@ module Speedtest
       latency = server[:latency]
 
       download_size, download_time = download(@server_root)
+      #download_size, download_time = 0, 1
       download_rate = download_size / download_time
       log "Download: #{pretty_speed download_rate}"
 
@@ -86,7 +89,7 @@ module Speedtest
       download_url = download_url(server_root)
       pool = TransferWorker.pool(size: @num_threads, args: [download_url, @logger])
       1.upto(ring_size).each do |i|
-        futures_ring.append(pool.future.download)
+        futures_ring.append(pool.future.download_curl)
       end
 
       failed = false
@@ -100,7 +103,7 @@ module Speedtest
         end
 
         if Time.now - start_time < @min_transfer_secs
-          futures_ring.append(pool.future.download)
+          futures_ring.append(pool.future.download_curl)
         end
       end
 
@@ -120,6 +123,12 @@ module Speedtest
       (1.upto(size)).map { alphabet[rand(alphabet.length)] }.join
     end
 
+    def upload_data(size)
+      s = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      content = s * (size / 36.0)
+      "content1=#{content}"
+    end
+
     def upload_url(server_root)
       if server_root =~ /upload.php$/
         server_root
@@ -131,7 +140,10 @@ module Speedtest
     def upload(server_root)
       log "\nstarting upload tests:"
 
-      data = randomString(('A'..'Z').to_a, @upload_size)
+      data = []
+      data << upload_data(524288)
+      data << upload_data(1048576)
+      data << upload_data(7340032)
 
       start_time = Time.now
 
@@ -140,7 +152,7 @@ module Speedtest
       upload_url = upload_url(server_root)
       pool = TransferWorker.pool(size: @num_threads, args: [upload_url, @logger])
       1.upto(ring_size).each do |i|
-        futures_ring.append(pool.future.upload(data))
+        futures_ring.append(pool.future.upload_curl(data[rand(data.size)]))
       end
 
       failed = false
@@ -154,7 +166,7 @@ module Speedtest
         end
 
         if Time.now - start_time < @min_transfer_secs
-          futures_ring.append(pool.future.upload(data))
+          futures_ring.append(pool.future.upload_curl(data[rand(data.size)]))
         end
       end
 
@@ -169,64 +181,6 @@ module Speedtest
 
       # bytes to bits / time = bps
       [ total_uploaded * 8, total_time ]
-    end
-
-    def fetch_server_list(type)
-      case type
-      when 'static'
-        fetch_static_server_list
-      when 'dynamic'
-        fetch_custom_server_list("https://c.speedtest.net/speedtest-servers-static.php")
-      when 'custom'
-        fetch_custom_server_list(@custom_server_list_url)
-      else
-        raise "Unknown server list #{type}"
-      end
-    end
-
-    def fetch_dynamic_server_list
-      page = HTTParty.get("https://www.speedtest.net/api/js/servers?engine=js&https_functional=1")
-      servers = JSON.load(page.body)
-      servers.sort_by! { |server| server['distance'] }
-      servers.reject! { |server| server['url'].nil? }
-      servers.map { |server| { url: server['url'] } }
-    end
-
-    def fetch_custom_server_list(url)
-      page = HTTParty.get("https://www.speedtest.net/speedtest-config.php")
-      ip,lat,lon = page.body.scan(/<client ip="([^"]*)" lat="([^"]*)" lon="([^"]*)"/)[0]
-      if ENV['IPSTACK_KEY']
-        ips_lat, ips_lon = find_lat_long_from_ipstack(ip)
-        if ips_lat
-          log "Using geo IP from ipstack (#{ips_lat}, #{ips_lon})"
-          lat = ips_lat
-          lon = ips_lon
-        end
-      end
-
-      orig = GeoPoint.new(lat, lon)
-      log "Your IP: #{ip}\nYour coordinates: #{orig}\n"
-
-      page = HTTParty.get(url)
-      log "Calculating distances in static server list"
-      sorted_servers = page.body.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).map { |x| {
-        :distance => orig.distance(GeoPoint.new(x[1],x[2])),
-        :url => x[0].split(/(http:\/\/.*)\/speedtest.*/)[1]
-      } }
-      log "Done calculating distances"
-      sorted_servers.reject! { |x| x[:url].nil? }
-      sorted_servers.sort_by! { |x| x[:distance] }
-    end
-
-    def find_lat_long_from_ipstack(ip)
-      page = HTTParty.get("http://api.ipstack.com/#{ip}?access_key=#{ENV['IPSTACK_KEY']}")
-      if page.code.to_s != '200'
-        log "ipstack failed with code #{page.code}"
-        return
-      end
-
-      data = JSON.load(page.body)
-      return data['latitude'], data['longitude']
     end
 
     def pick_server
@@ -252,6 +206,53 @@ module Speedtest
       selected = find_best_server(servers)
       @server_list = server_list if selected
       selected
+    end
+
+    def fetch_server_list(type)
+      case type
+      when 'static'
+        fetch_custom_server_list("https://c.speedtest.net/speedtest-servers-static.php")
+      when 'dynamic'
+        fetch_dynamic_server_list
+      when 'custom'
+        fetch_custom_server_list(@custom_server_list_url)
+      else
+        raise "Unknown server list #{type}"
+      end
+    end
+
+    def fetch_dynamic_server_list
+      page = HTTParty.get("https://www.speedtest.net/api/js/servers?engine=js&https_functional=1")
+      servers = JSON.load(page.body)
+      servers.sort_by! { |server| server['distance'] }
+      servers.reject! { |server| server['url'].nil? }
+      servers.map { |server| { url: server['url'] } }
+    end
+
+    def fetch_custom_server_list(url)
+      page = HTTParty.get("https://www.speedtest.net/speedtest-config.php")
+      ip,lat,lon = page.body.scan(/<client ip="([^"]*)" lat="([^"]*)" lon="([^"]*)"/)[0]
+      if @ip_latitude && @ip_longitude
+        log "Using latitude and longitude provided in parameters"
+        lat = @ip_latitude
+        lon = @ip_longitude
+      else
+        log "Using latitude and longitude provided by speedtest"
+      end
+
+      orig = GeoPoint.new(lat, lon)
+      log "Your IP: #{ip}\nYour coordinates: #{orig}\n"
+
+      log "Fetching server list url=#{url}"
+      page = HTTParty.get(url)
+      log "Calculating distances in static server list"
+      sorted_servers = page.body.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).map { |x| {
+        :distance => orig.distance(GeoPoint.new(x[1],x[2])),
+        :url => x[0].split(/(http:\/\/.*)\/speedtest.*/)[1]
+      } }
+      log "Done calculating distances"
+      sorted_servers.reject! { |x| x[:url].nil? }
+      sorted_servers.sort_by! { |x| x[:distance] }
     end
 
     def find_best_server(servers)
@@ -293,17 +294,17 @@ module Speedtest
 
     def validate_server_transfer(server_root)
       downloader = TransferWorker.new(download_url(server_root), @logger)
-      status = downloader.download
+      status = downloader.download_curl
       raise RuntimeError if status.error
 
       uploader = TransferWorker.new(upload_url(server_root), @logger)
       data = randomString(('A'..'Z').to_a, @upload_size)
-      status = uploader.upload(data)
+      status = uploader.upload_curl(data)
       raise RuntimeError if status.error || status.size < @upload_size
 
       true
     rescue => e
-      log "Rejecting #{server_root}"
+      log "Rejecting #{server_root} - #{e.class} #{e}"
       false
     end
 
