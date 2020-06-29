@@ -126,7 +126,8 @@ module Speedtest
 
     def upload_data(size)
       s = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-      s * (size / 36.0)
+      content = s * (size / 36.0)
+      "content1=#{content}"
     end
 
     def upload_url(server_root)

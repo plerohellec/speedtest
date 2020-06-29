@@ -37,15 +37,16 @@ module Speedtest
         page = Curl::Easy.new("#{@url}?x=#{(Time.now.to_f * 1000).round}") do |c|
           c.timeout = 15
           c.connect_timeout = 1
-          c.headers['User-Agent'] = 'Mozilla/5.0 (Linux-5.4.0-29-generic-x86_64-with-glibc2.29; U; 64bit; en-us) Python/3.8.2 (KHTML, like Gecko) speedtest-cli/2.1.2'
-          c.headers['Cache-Control'] = 'no-cache'
-          c.headers['Connection'] = 'close'
-          c.headers['Accept-Encoding'] = 'identity'
-          c.headers['Expect'] = nil
+#          c.headers['User-Agent'] = 'Mozilla/5.0 (Linux-5.4.0-29-generic-x86_64-with-glibc2.29; U; 64bit; en-us) Python/3.8.2 (KHTML, like Gecko) speedtest-cli/2.1.2'
+#          c.headers['Cache-Control'] = 'no-cache'
+#          c.headers['Connection'] = 'close'
+#          c.headers['Accept-Encoding'] = 'identity'
+#          c.headers['Expect'] = nil
           #c.set(Curl::CURLOPT_BUFFERSIZE, 1_000_000)
-          #c.set(Curl::CURLOPT_UPLOAD_BUFFERSIZE, 10_000)
+#          c.set(:UPLOAD_BUFFERSIZE, 2*1024*1024)
         end
-        page.http_post(Curl::PostField.content('content1', content))
+        #page.http_post(Curl::PostField.content('content1', content))
+        page.http_post(content)
 
         unless page.response_code / 100 == 2
           error "POST #{@url} failed with code #{page.response_code}"
@@ -60,7 +61,7 @@ module Speedtest
     end
 
     def upload_net_http(content)
-      log "  uploading (Net::Http): #{@url} size: #{content.size}"
+      # log "  uploading (Net::Http): #{@url} size: #{content.size}"
       status = ThreadStatus.new(false, 0)
 
       begin
@@ -79,8 +80,8 @@ module Speedtest
       status
     end
 
-    def upload_http_party(content)
-      log "  uploading: #{@url} size: #{content.size}"
+    def upload_httparty(content)
+      #log "  uploading: #{@url} size: #{content.size}"
       status = ThreadStatus.new(false, 0)
 
       begin

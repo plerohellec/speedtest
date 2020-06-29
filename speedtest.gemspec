@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "httparty", "~> 0.13"
-  spec.add_runtime_dependency "plr-curb"
+  spec.add_runtime_dependency "curb"
   spec.add_runtime_dependency "celluloid", "~> 0.17.3"
 
   spec.add_development_dependency "bundler", "~> 2.0"
