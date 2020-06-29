@@ -45,6 +45,7 @@ module Speedtest
       latency = server[:latency]
 
       download_size, download_time = download(@server_root)
+      #download_size, download_time = 0, 1
       download_rate = download_size / download_time
       log "Download: #{pretty_speed download_rate}"
 
@@ -88,7 +89,7 @@ module Speedtest
       download_url = download_url(server_root)
       pool = TransferWorker.pool(size: @num_threads, args: [download_url, @logger])
       1.upto(ring_size).each do |i|
-        futures_ring.append(pool.future.download)
+        futures_ring.append(pool.future.download_curl)
       end
 
       failed = false
@@ -102,7 +103,7 @@ module Speedtest
         end
 
         if Time.now - start_time < @min_transfer_secs
-          futures_ring.append(pool.future.download)
+          futures_ring.append(pool.future.download_curl)
         end
       end
 
@@ -122,6 +123,12 @@ module Speedtest
       (1.upto(size)).map { alphabet[rand(alphabet.length)] }.join
     end
 
+    def upload_data(size)
+      s = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      content = s * (size / 36.0)
+      "content1=#{content}"
+    end
+    
     def upload_url(server_root)
       if server_root =~ /upload.php$/
         server_root
@@ -133,7 +140,10 @@ module Speedtest
     def upload(server_root)
       log "\nstarting upload tests:"
 
-      data = randomString(('A'..'Z').to_a, @upload_size)
+      data = []
+      data << upload_data(524288)
+      data << upload_data(1048576)
+      data << upload_data(7340032)
 
       start_time = Time.now
 
@@ -142,7 +152,7 @@ module Speedtest
       upload_url = upload_url(server_root)
       pool = TransferWorker.pool(size: @num_threads, args: [upload_url, @logger])
       1.upto(ring_size).each do |i|
-        futures_ring.append(pool.future.upload(data))
+        futures_ring.append(pool.future.upload_curl(data[rand(data.size)]))
       end
 
       failed = false
@@ -156,7 +166,7 @@ module Speedtest
         end
 
         if Time.now - start_time < @min_transfer_secs
-          futures_ring.append(pool.future.upload(data))
+          futures_ring.append(pool.future.upload_curl(data[rand(data.size)]))
         end
       end
 
@@ -284,17 +294,17 @@ module Speedtest
 
     def validate_server_transfer(server_root)
       downloader = TransferWorker.new(download_url(server_root), @logger)
-      status = downloader.download
+      status = downloader.download_curl
       raise RuntimeError if status.error
 
       uploader = TransferWorker.new(upload_url(server_root), @logger)
       data = randomString(('A'..'Z').to_a, @upload_size)
-      status = uploader.upload(data)
+      status = uploader.upload_curl(data)
       raise RuntimeError if status.error || status.size < @upload_size
 
       true
     rescue => e
-      log "Rejecting #{server_root}"
+      log "Rejecting #{server_root} - #{e.class} #{e}"
       false
     end
 
