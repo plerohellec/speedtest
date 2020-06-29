@@ -3,7 +3,8 @@ require 'httparty'
 require_relative 'speedtest/result'
 require_relative 'speedtest/geo_point'
 require_relative 'speedtest/logging'
-require_relative 'speedtest/transfer_worker'
+require_relative 'speedtest/curl_transfer_worker'
+require_relative 'speedtest/httparty_transfer_worker'
 require_relative 'speedtest/ring'
 
 module Speedtest
@@ -31,6 +32,7 @@ module Speedtest
       @custom_server_list_url = options[:custom_server_list_url] # needed if select_server_list is custom
       @ip_latitude = options[:ip_latitude]
       @ip_longitude = options[:ip_longitude]
+      @http_lib = options.fetch(:http_lib, :httparty)
 
       @ping_runs = 2 if @ping_runs < 2
     end
@@ -80,6 +82,15 @@ module Speedtest
       "#{server_root}/speedtest/random#{@download_size}x#{@download_size}.jpg"
     end
 
+    def transfer_worker_pool(url)
+      case @http_lib
+      when :httparty
+        HttpartyTransferWorker.pool(size: @num_threads, args: [url, @logger])
+      when :curl
+        CurlTransferWorker.pool(size: @num_threads, args: [url, @logger])
+      end
+    end
+
     def download(server_root)
       log "\nstarting download tests:"
 
@@ -87,9 +98,9 @@ module Speedtest
       ring_size = @num_threads * 2
       futures_ring = Ring.new(ring_size)
       download_url = download_url(server_root)
-      pool = TransferWorker.pool(size: @num_threads, args: [download_url, @logger])
+      pool = transfer_worker_pool(download_url)
       1.upto(ring_size).each do |i|
-        futures_ring.append(pool.future.download_curl)
+        futures_ring.append(pool.future.download)
       end
 
       failed = false
@@ -103,7 +114,7 @@ module Speedtest
         end
 
         if Time.now - start_time < @min_transfer_secs
-          futures_ring.append(pool.future.download_curl)
+          futures_ring.append(pool.future.download)
         end
       end
 
@@ -117,10 +128,6 @@ module Speedtest
       end
 
       [ total_downloaded * 8, total_time ]
-    end
-
-    def randomString(alphabet, size)
-      (1.upto(size)).map { alphabet[rand(alphabet.length)] }.join
     end
 
     def upload_data(size)
@@ -150,9 +157,9 @@ module Speedtest
       ring_size = @num_threads * 2
       futures_ring = Ring.new(ring_size)
       upload_url = upload_url(server_root)
-      pool = TransferWorker.pool(size: @num_threads, args: [upload_url, @logger])
+      pool = transfer_worker_pool(upload_url)
       1.upto(ring_size).each do |i|
-        futures_ring.append(pool.future.upload_curl(data[rand(data.size)]))
+        futures_ring.append(pool.future.upload(data[rand(data.size)]))
       end
 
       failed = false
@@ -166,7 +173,7 @@ module Speedtest
         end
 
         if Time.now - start_time < @min_transfer_secs
-          futures_ring.append(pool.future.upload_curl(data[rand(data.size)]))
+          futures_ring.append(pool.future.upload(data[rand(data.size)]))
         end
       end
 
@@ -293,14 +300,14 @@ module Speedtest
     end
 
     def validate_server_transfer(server_root)
-      downloader = TransferWorker.new(download_url(server_root), @logger)
-      status = downloader.download_curl
+      downloader = CurlTransferWorker.new(download_url(server_root), @logger)
+      status = downloader.download
       raise RuntimeError if status.error
 
-      uploader = TransferWorker.new(upload_url(server_root), @logger)
-      data = randomString(('A'..'Z').to_a, @upload_size)
-      status = uploader.upload_curl(data)
-      raise RuntimeError if status.error || status.size < @upload_size
+      uploader = CurlTransferWorker.new(upload_url(server_root), @logger)
+      data = upload_data(10_000)
+      status = uploader.upload(data)
+      raise RuntimeError if status.error
 
       true
     rescue => e

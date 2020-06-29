@@ -10,12 +10,13 @@ speedtest = Speedtest::Test.new(min_transfer_secs: 10,
                                 num_threads: ENV.fetch('NUM_THREADS', 10).to_i,
                                 logger: Logger.new(STDOUT),
                                 skip_servers: [],
-                                skip_latency_min_ms: 1,
+                                skip_latency_min_ms: ENV.fetch('SKIP_LATENCY_MIN_MS', 0).to_i,
                                 select_server_url: ENV['SELECT_SERVER_URL'],
                                 select_server_list: ENV['SELECT_SERVER_LIST'],
                                 custom_server_list_url: ENV['SPEEDTEST_URL'],
                                 ip_latitude: ENV['LATITUDE'],
-                                ip_longitude: ENV['LONGITUDE'])
+                                ip_longitude: ENV['LONGITUDE'],
+                                http_lib: ENV.fetch('HTTP_LIB', :httparty).to_sym)
 
 results = speedtest.run
 ap results

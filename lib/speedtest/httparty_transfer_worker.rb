@@ -1,7 +1,7 @@
 require 'celluloid/current'
 
 module Speedtest
-  class TransferWorker
+  class HttpartyTransferWorker
     include Celluloid
     include Logging
 
@@ -29,11 +29,11 @@ module Speedtest
     end
 
     def upload(content)
-      # log "  uploading: #{@url}"
+      #log "  uploading: #{@url} size: #{content.size}"
       status = ThreadStatus.new(false, 0)
 
       begin
-        page = HTTParty.post(@url, :body => { "content" => content }, timeout: 10)
+        page = HTTParty.post(@url, :body => { "content1" => content }, timeout: 10)
         unless page.code / 100 == 2
           error "POST #{@url} failed with code #{page.code}"
           status.error = true
@@ -45,5 +45,6 @@ module Speedtest
       end
       status
     end
+
   end
 end
