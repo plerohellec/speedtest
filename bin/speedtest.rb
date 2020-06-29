@@ -6,7 +6,7 @@ require 'awesome_print'
 
 speedtest = Speedtest::Test.new(min_transfer_secs: 10,
                                 download_size: 1000,
-                                upload_size: 1_000_000,
+                                upload_size: ENV.fetch('UPLOAD_SIZE', 0).to_i,
                                 num_threads: ENV.fetch('NUM_THREADS', 10).to_i,
                                 logger: Logger.new(STDOUT),
                                 skip_servers: [],

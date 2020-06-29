@@ -23,7 +23,7 @@ module Speedtest
       @num_threads   = options[:num_threads]           || 4
       @ping_runs = options[:ping_runs]                 || 4
       @download_size = options[:download_size]         || 4000
-      @upload_size = options[:upload_size]             || 1_000_000
+      @upload_size = options[:upload_size]
       @logger = options[:logger]
       @skip_servers = options[:skip_servers]           || []
       @skip_latency_min_ms = options[:skip_latency_min_ms] || 0
@@ -148,9 +148,13 @@ module Speedtest
       log "\nstarting upload tests:"
 
       data = []
-      data << upload_data(524288)
-      data << upload_data(1048576)
-      data << upload_data(7340032)
+      if @upload_size && @upload_size > 0
+        data << upload_data(@upload_size)
+      else
+        data << upload_data(524288)
+        data << upload_data(1048576)
+        data << upload_data(7340032)
+      end
 
       start_time = Time.now
 

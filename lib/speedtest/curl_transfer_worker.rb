@@ -18,7 +18,7 @@ module Speedtest
       begin
         page = Curl.get(@url) do |c|
           c.timeout = 10
-          c.connect_timeout = 10
+          c.connect_timeout = 2
         end
         unless page.response_code / 100 == 2
           error "GET #{@url} failed with code #{page.response_code}"
