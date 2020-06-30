@@ -58,7 +58,7 @@ module Speedtest
       server_fqdn = fqdn(@server_root)
       log "server_fqdn = #{server_fqdn}"
 
-      Result.new(:server => server_fqdn, :latency => latency,
+      Result.new(server: server_fqdn, server_url: @server_root, latency: latency,
         download_size: download_size, download_time: download_time,
         upload_size: upload_size, upload_time: upload_time,
         server_list: @server_list)

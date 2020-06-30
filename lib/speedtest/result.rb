@@ -1,9 +1,10 @@
 module Speedtest
   class Result
-    attr_accessor :server, :latency, :download_size, :upload_size, :download_time, :upload_time, :server_list
+    attr_accessor :server, :server_url, :latency, :download_size, :upload_size, :download_time, :upload_time, :server_list
 
     def initialize(values = {})
       @server = values[:server]
+      @server_url = values[:server_url]
       @latency = values[:latency]
       @download_size = values[:download_size]
       @upload_size = values[:upload_size]
