@@ -65,7 +65,7 @@ module Speedtest
     end
 
     def fqdn(url)
-      url.gsub(/https?:\/\/([^\/\:]+)[\/\:\z].*/, '\1')
+      url.gsub(/https?:\/\/([^\/\:]+).*/, '\1')
     end
 
     def pretty_speed(speed)
