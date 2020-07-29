@@ -267,8 +267,8 @@ module Speedtest
     end
 
     def find_best_server(servers)
-      log "calculating ping latency for closest 30 servers"
-      latency_sorted_servers = servers[0..30].map { |x|
+      log "calculating ping latency for closest 40 servers"
+      latency_sorted_servers = servers[0..40].map { |x|
         {
           :latency => ping(x[:url]),
           :url => x[:url]
