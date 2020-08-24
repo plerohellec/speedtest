@@ -6,6 +6,8 @@ module Speedtest
     include Celluloid
     include Logging
 
+    USER_AGENT = 'speedtest-client'
+
     def initialize(url, logger)
       @url = url
       @logger = logger
@@ -19,6 +21,7 @@ module Speedtest
         page = Curl.get(@url) do |c|
           c.timeout = 10
           c.connect_timeout = 2
+          c.headers['User-Agent'] = USER_AGENT
         end
         unless page.response_code / 100 == 2
           error "GET #{@url} failed with code #{page.response_code}"
@@ -40,6 +43,7 @@ module Speedtest
         page = Curl::Easy.new(@url) do |c|
           c.timeout = 10
           c.connect_timeout = 2
+          c.headers['User-Agent'] = USER_AGENT
         end
         page.http_post(content)
 
