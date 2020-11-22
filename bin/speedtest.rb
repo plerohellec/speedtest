@@ -2,7 +2,7 @@
 
 require 'logger'
 require 'speedtest'
-require 'awesome_print'
+require 'amazing_print'
 
 speedtest = Speedtest::Test.new(min_transfer_secs: 10,
                                 download_size: 1000,
@@ -23,3 +23,7 @@ ap results
 
 # Use custom list of speedtest servers
 # LATITUDE='34.408' LONGITUDE='-119.720' SPEEDTEST_URL='https://vpsbenchmarks.s3.amazonaws.com/misc/speedtest-us-west.xml' SELECT_SERVER_LIST=custom be bin/speedtest.rb
+
+# Use specific server
+# SELECT_SERVER_URL='http://speedtest.telia.dk:8080/speedtest/upload.php'  be bin/speedtest.rb
+
