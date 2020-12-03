@@ -1,9 +1,3 @@
-require 'logger'
-require 'curl'
-
-require_relative 'logging'
-require_relative 'geo_point'
-
 module Speedtest
   module Servers
     class Server
@@ -27,6 +21,10 @@ module Speedtest
 
       def distance(geopoint)
         @geopoint.distance(geopoint)
+      end
+
+      def fqdn
+        @url.gsub(/https?:\/\/([^\/\:]+).*/, '\1')
       end
 
       private
@@ -54,6 +52,8 @@ module Speedtest
     end
 
     class List
+      include Enumerable
+
       def initialize
         @list = []
       end
@@ -66,6 +66,10 @@ module Speedtest
 
       def append(server)
         @list << server
+      end
+
+      def delete(server)
+        @list.delete(server)
       end
 
       def each(&block)
@@ -90,6 +94,25 @@ module Speedtest
         sorted_list = @list.sort_by { |server| server.latency }
         sorted_list.each { |server| sorted.append(server) }
         sorted
+      end
+
+      def filter(options={})
+        filtered = self.clone
+        if options[:min_latency]
+          filtered.each do |server|
+            filtered.delete(server) if server.latency<options[:min_latency]
+          end
+        end
+
+        if options[:skip_fqdns]
+          filtered.each do |server|
+            if options[:skip_fqdns].include?(server.fqdn)
+              filtered.delete(server)
+            end
+          end
+        end
+
+        filtered
       end
 
       def merge(server_list)
