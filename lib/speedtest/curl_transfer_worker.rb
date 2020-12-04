@@ -14,7 +14,7 @@ module Speedtest
     end
 
     def download
-      log "  downloading: #{@url}"
+      #log "  downloading: #{@url}"
       status = ThreadStatus.new(false, 0)
 
       begin
@@ -28,15 +28,15 @@ module Speedtest
           status.error = true
         end
         status.size = page.body_str.length
-      rescue Curl::Err::ConnectionFailedError, Curl::Err::TimeoutError, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH, Errno::EADDRNOTAVAIL, Errno::ECONNREFUSED, Errno::EPIPE => e
-        error "GET #{@url} failed with exception #{e.class}"
+      rescue => e
+        error "GET #{@url} failed with exception #{e.class} (#{e})"
         status.error = true
       end
       status
     end
 
     def upload(content)
-      log "  uploading: #{@url}"
+      #log "  uploading: #{@url}"
       status = ThreadStatus.new(false, 0)
 
       begin
@@ -52,8 +52,8 @@ module Speedtest
           status.error = true
         end
         status.size = page.body_str.split('=')[1].to_i
-      rescue Curl::Err::ConnectionFailedError, Curl::Err::TimeoutError, Net::HTTPNotFound, Net::OpenTimeout, Errno::ENETUNREACH, Errno::EADDRNOTAVAIL, Errno::ECONNREFUSED, Errno::EPIPE => e
-        error "POST #{@url} failed with exception #{e.class}"
+      rescue => e
+        error "POST #{@url} failed with exception #{e.class} (#{e})"
         status.error = true
       end
       status

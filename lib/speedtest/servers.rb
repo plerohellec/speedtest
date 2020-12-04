@@ -51,39 +51,16 @@ module Speedtest
       end
     end
 
-    class List
-      include Enumerable
+    class List < Array
 
       def initialize
-        @list = []
       end
 
-      def clone
-        newlist = List.new
-        @list.each { |server| newlist.append(server) }
-        newlist
-      end
-
-      def append(server)
-        @list << server
-      end
-
-      def delete(server)
-        @list.delete(server)
-      end
-
-      def each(&block)
-        @list.each do |server|
-          yield server
-        end
-        nil
-      end
-
-      def sort_by_distance(geopoint, keep=50)
+      def sort_by_distance(geopoint, keep=nil)
         sorted = List.new
-        sorted_list = @list.sort_by { |server| server.distance(geopoint) }
+        sorted_list = sort_by { |server| server.distance(geopoint) }
         sorted_list.each_with_index do |server, i|
-          break if i>=keep
+          break if keep && i>=keep
           sorted.append(server)
         end
         sorted
@@ -91,13 +68,14 @@ module Speedtest
 
       def sort_by_latency
         sorted = List.new
-        sorted_list = @list.sort_by { |server| server.latency }
+        sorted_list = sort_by { |server| server.latency }
         sorted_list.each { |server| sorted.append(server) }
         sorted
       end
 
       def filter(options={})
-        filtered = self.clone
+        filtered = clone
+
         if options[:min_latency]
           filtered.each do |server|
             filtered.delete(server) if server.latency<options[:min_latency]
@@ -116,37 +94,7 @@ module Speedtest
       end
 
       def merge(server_list)
-        merged = self.clone
-        server_list.each { |server| merged.append(server) }
-        merged
-      end
-    end
-
-    class ListLoader
-      include Speedtest::Logging
-
-      def initialize(speedtest_url, logger)
-        @speedtest_url = speedtest_url
-        @logger = logger
-      end
-
-      def download
-        @page = Curl.get(@speedtest_url)
-        if @page.response_code != 200
-          err = "Server list download failed: code=#{@page.response_code}"
-          log err
-          raise err
-        end
-      end
-
-      def parse
-        list = List.new
-        @page.body_str.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).each do |x|
-          geo = GeoPoint.new(x[1], x[2])
-          url = x[0].gsub(/\/speedtest\/.*/, '')
-          list.append(Server.new(url, geo, @logger))
-        end
-        list
+        clone.concat(server_list)
       end
     end
   end

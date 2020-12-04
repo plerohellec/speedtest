@@ -1,6 +1,10 @@
 module Speedtest
   module Transfers
-    Transfer = Struct.new(:server, :download_size, :download_time, :upload_size, :upload_time)
+    Transfer = Struct.new(:server, :download_size, :download_time, :upload_size, :upload_time) do
+      def failed?
+        download_size == 0 || upload_size == 0
+      end
+    end
 
     class Mover
       include Speedtest::Logging
@@ -109,7 +113,7 @@ module Speedtest
         @transfer.upload_size = total_uploaded
         @transfer.upload_time = Time.new - start_time
 
-        log "Took #{@total_upload_time} seconds to upload #{total_uploaded} bytes in #{@num_threads} threads\n"
+        log "Took #{@transfer.upload_time} seconds to upload #{total_uploaded} bytes in #{@num_threads} threads\n"
       end
 
       def download_url
