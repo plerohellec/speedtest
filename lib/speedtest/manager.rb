@@ -29,11 +29,11 @@ module Speedtest
       merged.sort_by_latency
     end
 
-    def run_transfers(list, num_transfers)
+    def run_transfers(list, num_transfers, options={})
       transfers = []
       list.each do |server|
         @logger.info "Starting transfers for #{server.fqdn}"
-        mover = Speedtest::Transfers::Mover.new(server, @logger, num_threads: 1, download_size: 2000, upload_size: 524288)
+        mover = Speedtest::Transfers::Mover.new(server, @logger, options)
         unless mover.validate_server_transfer
           @logger.warn "Rejecting #{server.fqdn}"
           next
@@ -60,6 +60,5 @@ module Speedtest
       @logger.info "geo=#{geo.inspect}"
       geo
     end
-
   end
 end

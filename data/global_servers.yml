@@ -1,0 +1,68 @@
+---
+eu-west:
+- url: speedtest.eu.kamatera.com:8080
+  ip: 185.167.97.105
+  latitude: 52.309051513671875
+  longitude: 4.940189838409424
+- url: rennes3.speedtest.orange.fr
+  ip: 80.12.26.64
+  latitude: 48.91482162475586
+  longitude: 2.3812100887298584
+us-east:
+- url: ashburn.speedtest.shentel.net
+  ip: 204.111.0.58
+  latitude: 39.330528259277344
+  longitude: -77.83822631835938
+- url: speedtest.planet.net:8080
+  ip: 69.172.142.67
+  latitude: 41.06439971923828
+  longitude: -74.80342864990234
+eu-south:
+- url: speedtest.connesi.it:8080
+  ip: 109.73.80.190
+  latitude: 42.881099700927734
+  longitude: 12.640359878540039
+- url: speedtest.fibra365.net
+  ip: 185.158.171.8
+  latitude: 40.92744827270508
+  longitude: 0.8455700278282166
+us-south:
+- url: okc-speedtest.onenet.net
+  ip: 164.58.96.254
+  latitude: 35.47465896606445
+  longitude: -97.50315856933594
+- url: speedtest01.suddenlink.net:8080
+  ip: 208.180.43.202
+  latitude: 39.043701171875
+  longitude: -77.47419738769531
+- url: tul-speedtest.onenet.net:8080
+  ip: 164.58.96.250
+  latitude: 35.47465896606445
+  longitude: -97.50315856933594
+us-west:
+- url: ookla1.enidok.sprintadp.net
+  ip: 205.244.236.6
+  latitude: 47.60150146484375
+  longitude: -122.33039855957031
+- url: speedtest.west.rr.com:8080
+  ip: 142.129.0.65
+  latitude: 39.742488861083984
+  longitude: -104.98564147949219
+asia-east:
+- url: www.suntechspeedtest.com:8080
+  ip: 218.102.52.37
+  latitude: 22.396400451660156
+  longitude: 114.1094970703125
+- url: hk.ap.speedtest.i3d.net
+  ip: 43.239.136.54
+  latitude: 22.396400451660156
+  longitude: 114.1094970703125
+us-central:
+- url: east-speedtest.frontiernetworks.ca
+  ip: 205.207.65.3
+  latitude: 43.62981033325195
+  longitude: -79.53668212890625
+- url: speedtest.compton.net
+  ip: 208.74.208.91
+  latitude: 43.70317077636719
+  longitude: -79.51219177246094

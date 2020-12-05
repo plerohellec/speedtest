@@ -26,7 +26,7 @@ module Speedtest
       end
 
       def validate_server_transfer
-        downloader = CurlTransferWorker.new(download_url, @logger)
+        downloader = CurlTransferWorker.new(download_url(500), @logger)
         status = downloader.download
         raise RuntimeError if status.error
 
@@ -50,7 +50,7 @@ module Speedtest
         start_time = Time.now
         ring_size = @num_threads * 2
         futures_ring = Ring.new(ring_size)
-        pool = transfer_worker_pool(download_url)
+        pool = transfer_worker_pool(download_url(@download_size))
         1.upto(ring_size).each do |i|
           futures_ring.append(pool.future.download)
         end
@@ -116,8 +116,8 @@ module Speedtest
         log "Took #{@transfer.upload_time} seconds to upload #{total_uploaded} bytes in #{@num_threads} threads\n"
       end
 
-      def download_url
-        "#{@server.url}/speedtest/random#{@download_size}x#{@download_size}.jpg"
+      def download_url(size)
+        "#{@server.url}/speedtest/random#{size}x#{size}.jpg"
       end
 
       def upload_url
