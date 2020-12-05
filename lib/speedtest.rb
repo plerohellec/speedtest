@@ -1,5 +1,7 @@
 require 'logger'
 require 'curl'
+require 'yaml'
+require 'json'
 
 require_relative 'speedtest/geo_point'
 require_relative 'speedtest/logging'

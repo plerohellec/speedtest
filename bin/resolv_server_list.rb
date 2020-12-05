@@ -63,6 +63,11 @@ regions.each do |region, servers|
   end
 end
 
-File.write("#{yml_server_list}.full", YAML.dump(regions))
+out_filename = if yml_server_list =~ /\.input/
+                 yml_server_list.gsub('.input', '')
+               else
+                 yml_server_list.gsub('.yml', '.output.yml')
+               end
+File.write(out_filename, YAML.dump(regions))
 
 

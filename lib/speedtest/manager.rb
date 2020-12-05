@@ -5,19 +5,21 @@ module Speedtest
     end
 
     def load_speedtest_server_list
-      ll = Speedtest::Loaders::ServerList.new("https://c.speedtest.net/speedtest-servers-static.php", @logger)
+      ll = Speedtest::Loaders::ServerList.new("https://c.speedtest.net/speedtest-servers-static.php", @logger, :speedtest)
       ll.download
       ll.parse
     end
 
     def load_global_server_list
+      ll = Speedtest::Loaders::ServerList.new("https://vpsbenchmarks.s3.amazonaws.com/misc/global_servers.yml", @logger, :global)
+      ll.download
+      ll.parse
     end
 
     def sort_and_filter_server_list(list, geopoint, options={})
       options.slice(:keep_num_servers, :min_latency, :skip_fqdns)
 
       distance_sorted = list.sort_by_distance(geopoint, options[:keep_num_servers])
-      # distance_sorted.each { |s| @logger.debug [ s.url, s.geopoint ].ai }
       latency_sorted = distance_sorted.sort_by_latency
       latency_sorted.each { |s| @logger.debug [ s.url, s.geopoint, s.latency ].ai }
 
@@ -51,14 +53,6 @@ module Speedtest
         break if num_transfers == 0
       end
       transfers
-    end
-
-    def speedtest_geopoint
-      config = Speedtest::Loaders::Config.new
-      config.load
-      geo = config.ip_geopoint
-      @logger.info "geo=#{geo.inspect}"
-      geo
     end
   end
 end

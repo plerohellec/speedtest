@@ -18,13 +18,14 @@ module Speedtest
     class ServerList
       include Speedtest::Logging
 
-      def initialize(speedtest_url, logger)
-        @speedtest_url = speedtest_url
+      def initialize(url, logger, type)
+        @url = url
         @logger = logger
+        @type = type
       end
 
       def download
-        @page = Curl.get(@speedtest_url)
+        @page = Curl.get(@url)
         if @page.response_code != 200
           log err = "Server list download failed: code=#{@page.response_code}"
           raise err
@@ -32,12 +33,35 @@ module Speedtest
       end
 
       def parse
+        case @type
+        when :speedtest then parse_speedtest
+        when :global then parse_global
+        else
+          raise "Unknown server list type: #{@type}"
+        end
+      end
+
+      private
+
+      def parse_speedtest
         list = Servers::List.new
         @page.body_str.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).each do |x|
           geo = GeoPoint.new(x[1], x[2])
           url = x[0].gsub(/\/speedtest\/.*/, '')
           log "adding server url: #{url}"
-          list.append(Servers::Server.new(url, geo, @logger))
+          list << Servers::Server.new(url, geo, @logger)
+        end
+        list
+      end
+
+      def parse_global
+        list = Servers::List.new
+        regions = YAML.load(@page.body_str)
+        regions.each do |region, servers|
+          servers.each do |server|
+            geo = GeoPoint.new(server['latitude'], server['longitude'])
+            list << Servers::Server.new(server['url'], geo, @logger)
+          end
         end
         list
       end
