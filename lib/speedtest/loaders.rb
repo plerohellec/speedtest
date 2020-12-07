@@ -48,7 +48,7 @@ module Speedtest
         @page.body_str.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).each do |x|
           geo = GeoPoint.new(x[1], x[2])
           url = x[0].gsub(/\/speedtest\/.*/, '')
-          log "adding server url: #{url}"
+          #log "adding server url: #{url}"
           list << Servers::Server.new(url, geo, @logger)
         end
         list

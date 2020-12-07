@@ -96,6 +96,10 @@ module Speedtest
       def merge(server_list)
         clone.concat(server_list)
       end
+
+      def min_latency
+        server = self.min_by(&:latency).latency
+      end
     end
   end
 end
