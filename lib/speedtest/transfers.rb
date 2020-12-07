@@ -1,8 +1,8 @@
 module Speedtest
   module Transfers
-    Transfer = Struct.new(:server, :download_size, :download_time, :upload_size, :upload_time) do
+    Transfer = Struct.new(:server_fqdn, :latency, :download_size_bytes, :download_time, :upload_size_bytes, :upload_time) do
       def failed?
-        download_size == 0 || upload_size == 0
+        download_size_bytes == 0 || upload_size_bytes == 0
       end
     end
 
@@ -16,7 +16,7 @@ module Speedtest
         @upload_size   = options[:upload_size]
         @num_threads   = options[:num_threads]           || 10
         @min_transfer_secs = options[:min_transfer_secs] || 10
-        @transfer = Transfer.new(@server)
+        @transfer = Transfer.new(@server.fqdn, @server.latency)
       end
 
       def run
@@ -61,7 +61,7 @@ module Speedtest
           if status.error == true
             log "Failed download from #{@server.fqdn}"
           else
-            total_downloaded += status.size * 8
+            total_downloaded += status.size
           end
 
           if Time.now - start_time < @min_transfer_secs
@@ -69,7 +69,7 @@ module Speedtest
           end
         end
 
-        @transfer.download_size = total_downloaded
+        @transfer.download_size_bytes = total_downloaded
         @transfer.download_time = Time.new - start_time
 
         log "Took #{@transfer.download_time} seconds to download #{total_downloaded} bytes in #{@num_threads} threads\n"
@@ -102,7 +102,7 @@ module Speedtest
           if status.error == true
             log "Failed upload to #{@server.fqdn}"
           else
-            total_uploaded += status.size * 8
+            total_uploaded += status.size
           end
 
           if Time.now - start_time < @min_transfer_secs
@@ -110,7 +110,7 @@ module Speedtest
           end
         end
 
-        @transfer.upload_size = total_uploaded
+        @transfer.upload_size_bytes = total_uploaded
         @transfer.upload_time = Time.new - start_time
 
         log "Took #{@transfer.upload_time} seconds to upload #{total_uploaded} bytes in #{@num_threads} threads\n"

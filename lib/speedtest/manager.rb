@@ -21,14 +21,14 @@ module Speedtest
 
       distance_sorted = list.sort_by_distance(geopoint, options[:keep_num_servers])
       latency_sorted = distance_sorted.sort_by_latency
-      latency_sorted.each { |s| @logger.debug [ s.url, s.geopoint, s.latency ].ai }
+      #latency_sorted.each { |s| @logger.debug [ s.url, s.geopoint, s.latency ].ai }
 
       latency_sorted.filter(options)
     end
 
     def merge_server_lists(list1, list2)
       merged = list1.merge(list2)
-      merged.sort_by_latency
+      merged.sort_by_latency.uniq! { |server| server.url }
     end
 
     def run_transfers(list, num_transfers, options={})
@@ -43,7 +43,7 @@ module Speedtest
 
         transfer = mover.run
         if transfer.failed?
-          @logger.warn "Transfer for #{server.fqdn} failed: dl=#{transfer.download_size} ul=#{transfer.upload_size}"
+          @logger.warn "Transfer for #{server.fqdn} failed: dl=#{transfer.download_size_bytes} ul=#{transfer.upload_size_bytes}"
           next
         end
 
