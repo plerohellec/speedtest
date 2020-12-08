@@ -77,17 +77,11 @@ module Speedtest
         filtered = clone
 
         if options[:min_latency]
-          filtered.each do |server|
-            filtered.delete(server) if server.latency<options[:min_latency]
-          end
+          filtered.delete_if { |server| server.latency<options[:min_latency] }
         end
 
         if options[:skip_fqdns]
-          filtered.each do |server|
-            if options[:skip_fqdns].include?(server.fqdn)
-              filtered.delete(server)
-            end
-          end
+          filtered.delete_if { |server| options[:skip_fqdns].include?(server.fqdn) }
         end
 
         filtered
