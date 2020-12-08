@@ -32,8 +32,7 @@ module Speedtest
       merged
     end
 
-    def run_transfers(list, num_transfers, options={})
-      transfers = []
+    def run_each_transfer(list, num_transfers, options={}, &block)
       list.each do |server|
         @logger.info "Starting transfers for #{server.fqdn}"
         mover = Speedtest::Transfers::Mover.new(server, @logger, options)
@@ -48,10 +47,17 @@ module Speedtest
           next
         end
 
-        transfers << transfer
+        yield transfer
 
         num_transfers -= 1
         break if num_transfers == 0
+      end
+    end
+
+    def run_transfers(list, num_transfers, options={})
+      transfers = []
+      run_each_transfer(list, num_transfers, options) do |transfer|
+        transfers << transfer
       end
       transfers
     end
