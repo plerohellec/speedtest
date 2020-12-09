@@ -34,7 +34,7 @@ module Speedtest
 
     def run_each_transfer(list, num_transfers, options={}, &block)
       list.each do |server|
-        @logger.info "Starting transfers for #{server.fqdn}"
+        @logger.info "Starting transfers for #{server.url}"
         mover = Speedtest::Transfers::Mover.new(server, @logger, options)
         unless mover.validate_server_transfer
           @logger.warn "Rejecting #{server.fqdn}"

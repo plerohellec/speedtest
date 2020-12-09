@@ -1,6 +1,6 @@
 module Speedtest
   module Transfers
-    Transfer = Struct.new(:server_fqdn, :latency, :download_size_bytes, :download_time, :upload_size_bytes, :upload_time) do
+    Transfer = Struct.new(:server_url, :latency, :download_size_bytes, :download_time, :upload_size_bytes, :upload_time) do
       def failed?
         download_size_bytes == 0 || upload_size_bytes == 0
       end
@@ -16,7 +16,7 @@ module Speedtest
         @upload_size   = options[:upload_size]
         @num_threads   = options[:num_threads]           || 10
         @min_transfer_secs = options[:min_transfer_secs] || 10
-        @transfer = Transfer.new(@server.fqdn, @server.latency)
+        @transfer = Transfer.new(@server.url, @server.latency)
       end
 
       def run
