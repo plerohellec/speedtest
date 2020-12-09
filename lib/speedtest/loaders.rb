@@ -18,17 +18,25 @@ module Speedtest
     class ServerList
       include Speedtest::Logging
 
-      def initialize(url, logger, type)
-        @url = url
+      def initialize(url_or_path, logger, type)
+        @url_or_path = url_or_path
         @logger = logger
         @type = type
       end
 
       def download
-        @page = Curl.get(@url)
-        if @page.response_code != 200
-          log err = "Server list download failed: code=#{@page.response_code}"
-          raise err
+        case @type
+        when :speedtest
+          resp = Curl.get(@url_or_path)
+          if resp.response_code != 200
+            log err = "Server list download failed: code=#{resp.response_code}"
+            raise err
+          end
+          @page = resp.body_str
+        when :global
+          @page = File.read(@url_or_path)
+        else
+          raise "Unknown server list type: #{@type}"
         end
       end
 
@@ -45,7 +53,7 @@ module Speedtest
 
       def parse_speedtest
         list = Servers::List.new
-        @page.body_str.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).each do |x|
+        @page.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).each do |x|
           geo = GeoPoint.new(x[1], x[2])
           url = x[0].gsub(/\/speedtest\/.*/, '')
           #log "adding server url: #{url}"
@@ -56,10 +64,10 @@ module Speedtest
 
       def parse_global
         list = Servers::List.new
-        regions = YAML.load(@page.body_str)
+        regions = YAML.load(@page)
         regions.each do |region, servers|
           servers.each do |server|
-            geo = GeoPoint.new(server['latitude'], server['longitude'])
+            geo = GeoPoint.new(0, 0)
             url = "http://#{server['url']}"
             list << Servers::Server.new(url, geo, @logger)
           end

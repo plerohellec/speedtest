@@ -1,19 +1,27 @@
 module Speedtest
   class Manager
+    SPEEDTEST_SERVER_LIST_URL = "https://c.speedtest.net/speedtest-servers-static.php"
+    GLOBAL_SERVER_LIST_PATH = File.expand_path('../../../data/global_servers.yml', __FILE__)
+
     def initialize(logger)
       @logger = logger
     end
 
-    def load_speedtest_server_list
-      ll = Speedtest::Loaders::ServerList.new("https://c.speedtest.net/speedtest-servers-static.php", @logger, :speedtest)
+    def load_speedtest_server_list(url = SPEEDTEST_SERVER_LIST_URL)
+      ll = Speedtest::Loaders::ServerList.new(url, @logger, :speedtest)
       ll.download
       ll.parse
     end
 
-    def load_global_server_list
-      ll = Speedtest::Loaders::ServerList.new("https://vpsbenchmarks.s3.amazonaws.com/misc/global_servers.yml", @logger, :global)
+    def load_global_server_list(path = GLOBAL_SERVER_LIST_PATH)
+      ll = Speedtest::Loaders::ServerList.new(path, @logger, :global)
       ll.download
       ll.parse
+    end
+
+    def load_single_server(url)
+      list = Speedtest::Servers::List.new
+      list << Speedtest::Servers::Server.new(url, Speedtest::GeoPoint.new(0,0), @logger)
     end
 
     def sort_and_filter_server_list(list, geopoint, options={})
