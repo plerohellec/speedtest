@@ -28,8 +28,8 @@ module Speedtest
 
     def merge_server_lists(list1, list2)
       merged = list1.merge(list2)
-      merged.sort_by_latency.uniq! { |server| server.url }
-      merged
+      merged.uniq! { |server| server.url }
+      merged.sort_by_latency
     end
 
     def run_each_transfer(list, num_transfers, options={}, &block)
