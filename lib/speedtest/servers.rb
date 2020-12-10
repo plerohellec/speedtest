@@ -1,15 +1,13 @@
 module Speedtest
   module Servers
     class Server
-      include Speedtest::Logging
-
       attr_reader :url, :geopoint
 
       NUM_PINGS = 3
       HTTP_PING_TIMEOUT = 5
 
-      def initialize(url, geopoint, logger)
-        @logger = logger
+      def initialize(url, geopoint)
+        @logger = Speedtest.logger
         @url = url
         @geopoint = geopoint
       end
@@ -42,7 +40,7 @@ module Speedtest
             end
             times << Time.new - start
           rescue => e
-            log "ping error: #{e.class} [#{e}] for #{@url}"
+            @logger.info "ping error: #{e.class} [#{e}] for #{@url}"
             times << 999999
           end
         end
@@ -54,6 +52,7 @@ module Speedtest
     class List < Array
 
       def initialize
+        @logger = Speedtest.logger
       end
 
       def sort_by_distance(geopoint, keep=nil)

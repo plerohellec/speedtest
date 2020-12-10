@@ -7,11 +7,9 @@ module Speedtest
     end
 
     class Mover
-      include Speedtest::Logging
-
-      def initialize(server, logger, options={})
+      def initialize(server, options={})
         @server = server
-        @logger = logger
+        @logger = Speedtest.logger
         @download_size = options[:download_size]         || 4000
         @upload_size   = options[:upload_size]
         @num_threads   = options[:num_threads]           || 10
@@ -26,26 +24,26 @@ module Speedtest
       end
 
       def validate_server_transfer
-        downloader = CurlTransferWorker.new(download_url(500), @logger)
+        downloader = CurlTransferWorker.new(download_url(500))
         status = downloader.download
         raise RuntimeError if status.error
 
-        uploader = CurlTransferWorker.new(upload_url, @logger)
+        uploader = CurlTransferWorker.new(upload_url)
         data = upload_data(10_000)
         status = uploader.upload(data)
         raise RuntimeError if status.error
 
-        log "Validation success for #{@server.fqdn}"
+        @logger.info "Validation success for #{@server.fqdn}"
         true
       rescue => e
-        error "Rejecting #{@server.fqdn} - #{e.class} #{e}"
+        @logger.error "Rejecting #{@server.fqdn} - #{e.class} #{e}"
         false
       end
 
       private
 
       def download
-        log "starting download tests:"
+        @logger.info "starting download tests:"
 
         start_time = Time.now
         ring_size = @num_threads * 2
@@ -59,7 +57,7 @@ module Speedtest
         while (future = futures_ring.pop) do
           status = future.value
           if status.error == true
-            log "Failed download from #{@server.fqdn}"
+            @logger.warn "Failed download from #{@server.fqdn}"
           else
             total_downloaded += status.size
           end
@@ -72,11 +70,11 @@ module Speedtest
         @transfer.download_size_bytes = total_downloaded
         @transfer.download_time = Time.new - start_time
 
-        log "Took #{@transfer.download_time} seconds to download #{total_downloaded} bytes in #{@num_threads} threads\n"
+        @logger.info "Took #{@transfer.download_time} seconds to download #{total_downloaded} bytes in #{@num_threads} threads\n"
       end
 
       def upload
-        log "starting upload tests:"
+        @logger.info "starting upload tests:"
 
         data = []
         if @upload_size && @upload_size > 0
@@ -100,7 +98,7 @@ module Speedtest
         while (future = futures_ring.pop) do
           status = future.value
           if status.error == true
-            log "Failed upload to #{@server.fqdn}"
+            @logger.info "Failed upload to #{@server.fqdn}"
           else
             total_uploaded += status.size
           end
@@ -113,7 +111,7 @@ module Speedtest
         @transfer.upload_size_bytes = total_uploaded
         @transfer.upload_time = Time.new - start_time
 
-        log "Took #{@transfer.upload_time} seconds to upload #{total_uploaded} bytes in #{@num_threads} threads\n"
+        @logger.info "Took #{@transfer.upload_time} seconds to upload #{total_uploaded} bytes in #{@num_threads} threads\n"
       end
 
       def download_url(size)
@@ -129,7 +127,7 @@ module Speedtest
       end
 
       def transfer_worker_pool(url)
-        CurlTransferWorker.pool(size: @num_threads, args: [url, @logger])
+        CurlTransferWorker.pool(size: @num_threads, args: [url])
       end
 
       def upload_data(size)

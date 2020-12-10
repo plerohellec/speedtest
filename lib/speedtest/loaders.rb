@@ -4,7 +4,7 @@ module Speedtest
       def load
         @page = Curl.get("https://www.speedtest.net/speedtest-config.php")
         if @page.response_code != 200
-          log err = "Server list download failed: code=#{@page.response_code}"
+          Speedtest.logger.error err = "Server list download failed: code=#{@page.response_code}"
           raise err
         end
       end
@@ -16,11 +16,9 @@ module Speedtest
     end
 
     class ServerList
-      include Speedtest::Logging
-
-      def initialize(url_or_path, logger, type)
+      def initialize(url_or_path, type)
         @url_or_path = url_or_path
-        @logger = logger
+        @logger = Speedtest.logger
         @type = type
       end
 
@@ -29,7 +27,7 @@ module Speedtest
         when :speedtest
           resp = Curl.get(@url_or_path)
           if resp.response_code != 200
-            log err = "Server list download failed: code=#{resp.response_code}"
+            @logger.error err = "Server list download failed: code=#{resp.response_code}"
             raise err
           end
           @page = resp.body_str
@@ -57,7 +55,7 @@ module Speedtest
           geo = GeoPoint.new(x[1], x[2])
           url = x[0].gsub(/\/speedtest\/.*/, '')
           #log "adding server url: #{url}"
-          list << Servers::Server.new(url, geo, @logger)
+          list << Servers::Server.new(url, geo)
         end
         list
       end
@@ -69,7 +67,7 @@ module Speedtest
           servers.each do |server|
             geo = GeoPoint.new(0, 0)
             url = "http://#{server['url']}"
-            list << Servers::Server.new(url, geo, @logger)
+            list << Servers::Server.new(url, geo)
           end
         end
         list

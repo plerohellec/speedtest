@@ -4,7 +4,9 @@ require 'amazing_print'
 require_relative '../lib/speedtest'
 
 logger = Logger.new(STDOUT)
-manager = Speedtest::Manager.new(logger)
+Speedtest.init_logger(logger)
+
+manager = Speedtest::Manager.new
 
 logger.info "Loading servers lists"
 servers_speedtest = manager.load_speedtest_server_list
