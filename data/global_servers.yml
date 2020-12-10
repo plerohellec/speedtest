@@ -20,5 +20,4 @@ asia-east:
   - url: www.suntechspeedtest.com:8080
   - url: hk.ap.speedtest.i3d.net
 us-central:
-  - url: east-speedtest.frontiernetworks.ca
   - url: speedtest.compton.net
