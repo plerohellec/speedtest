@@ -73,7 +73,7 @@ filtered_list.each do |server|
 end
 ```
 
-### Use the Manager to sort, filter servers and run the trasnfers
+### Use the Manager to sort, filter servers and run the transfers
 ```ruby
 require 'amazing_print'
 
