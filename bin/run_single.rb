@@ -8,7 +8,7 @@ require_relative '../lib/speedtest'
 logger = Logger.new(STDOUT)
 Speedtest.init_logger(logger)
 
-server = Speedtest::Servers::Server.new(ENV.fetch('URL'), Speedtest::GeoPoint.new(0,0))
+server = Speedtest::Servers::Server.new(ENV.fetch('URL'))
 options = { num_threads: 2, download_size: 500, upload_size: 524288 }
 mover = Speedtest::Transfers::Mover.new(server, options)
 transfer = mover.run

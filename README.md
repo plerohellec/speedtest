@@ -17,67 +17,80 @@ $ bundle install
 ```
 
 ## Usage:
-require it in your script
+Require it in your script:
 ```ruby
-require 'logger'
 require 'speedtest'
 ```
-
-Configure a new test with whatever options you want&mdash;all are optional:
-* minimum_transfer_secs - The transfers will continue for at least that many seconds
-* num_threads - The number of threads to perform the transfers in parallel
-* ping_runs - The number of ping attempts to establish latency
-* download_size - jpg dimensions (must be one or more of `[350, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000]`)
-* upload_size - Size of the randomly generated file in bytes
-* logger
-
+### Single Server Transfer test
+Initialize server
 ```ruby
-speedtest = Speedtest::Test.new(min_transfer_secs: 5,
-                                download_size: 500,
-                                upload_size: 10_000,
-                                num_threads: 4,
-                                logger: Logger.new(STDOUT),
-                                skip_servers: "http://www.github.com")
- )
- => #<Speedtest::Test:0x007fac5ac9dca0 @download_runs=4, @upload_runs=4, @ping_runs=4, @download_sizes=[750, 1500], @upload_sizes=[10000, 400000], @debug=true>
+server = Speedtest::Server.new('http://speedgauge2.optonline.net:8080')
 ```
 
-test.run() returns some results:
+Run the transfers (downlod + upload) and print results
 ```ruby
-results = test.run
+require 'amazing_print'
+
+logger = Logger.new(STDOUT)
+Speedtest.init_logger(logger)
+
+options = { num_threads: 2, download_size: 500, upload_size: 524288 }
+mover = Speedtest::Transfers::Mover.new(server, options)
+transfer = mover.run
+ap transfer
 ```
-With logger set, this produces:
+
+### Find fastest server in list
 ```ruby
-Your IP: 97.126.32.16
-Your coordinates: [47.4356, -122.1141]
-Automatically selected server: http://lg.sea-z.fdcservers.net - 32.985 ms
-Server http://lg.sea-z.fdcservers.net
+require 'amazing_print'
 
-starting download tests:
-  downloading: http://lg.sea-z.fdcservers.net/speedtest/random1500x1500.jpg
-  downloading: http://lg.sea-z.fdcservers.net/speedtest/random750x750.jpg
-  downloading: http://lg.sea-z.fdcservers.net/speedtest/random1500x1500.jpg
-  downloading: http://lg.sea-z.fdcservers.net/speedtest/random750x750.jpg
-  downloading: http://lg.sea-z.fdcservers.net/speedtest/random750x750.jpg
-  downloading: http://lg.sea-z.fdcservers.net/speedtest/random750x750.jpg
-  downloading: http://lg.sea-z.fdcservers.net/speedtest/random1500x1500.jpg
-  downloading: http://lg.sea-z.fdcservers.net/speedtest/random1500x1500.jpg
-Took 6.10022 seconds to download 22345012 bytes in 8 threads
-Download: 27.95 Mbps
+logger = Logger.new(STDOUT)
+Speedtest.init_logger(logger)
 
-starting upload tests:
-  uploading size 10000: http://lg.sea-z.fdcservers.net/speedtest/upload.php
-  uploading size 10000: http://lg.sea-z.fdcservers.net/speedtest/upload.php
-  uploading size 10000: http://lg.sea-z.fdcservers.net/speedtest/upload.php
-  uploading size 10000: http://lg.sea-z.fdcservers.net/speedtest/upload.php
-  uploading size 400000: http://lg.sea-z.fdcservers.net/speedtest/upload.php
-  uploading size 400000: http://lg.sea-z.fdcservers.net/speedtest/upload.php
-  uploading size 400000: http://lg.sea-z.fdcservers.net/speedtest/upload.php
-  uploading size 400000: http://lg.sea-z.fdcservers.net/speedtest/upload.php
-Took 3.437126 seconds to upload 1644080 bytes in 8 threads
-Upload: 3.65 Mbps
+url = "https://c.speedtest.net/speedtest-servers-static.php"
+loader = Speedtest::Loaders::ServerList.new(url, :speedtest)
+loader.download
+server_list = loader.parse
 
-  => #<Speedtest::Result:0x007fac5ac1e680 @server="http://lg.sea-z.fdcservers.net", @latency=32.985, @download_size=22345012, @upload_size=1644080, @download_time=6.10022, @upload_time=3.437126>
+# Find your latitude/longitude from Speedtest/Maxmind
+maxmind_geopoint = Speedtest::GeoPoint.speedtest_geopoint
+
+# Sort by distance to your location and only keep the 10 closest (fast)
+distance_sorted = list.sort_by_distance(geopoint, 10)
+
+# Ping each server in list and generate new list sorted by ping latency (slow)
+latency_sorted = distance_sorted.sort_by_latency
+
+options = { min_latency: 7, skip_fqdns: [ 'bad.speedtest.server' ] }
+filtered_list = latency_sorted.filter(options)
+
+# Run transfers for the 2 servers with minimum latency in list
+options = { download_size: 500, upload_size: 1_000_000, num_threads: 5, min_transfer_secs }
+filtered_list.each do |server|
+  mover = Speedtest::Transfers::Mover.new(server, options)
+  transfer = mover.run
+  ap transfer
+end
+```
+
+### Use the Manager to sort, filter servers and run the trasnfers
+```ruby
+require 'amazing_print'
+
+Speedtest.init_logger(Logger.new(STDOUT))
+
+# Load list of servers from Speedtest
+manager = Speedtest::Manager.new
+servers = manager.load_speedtest_server_list
+
+# Sort by distance, keep 20 servers and sort by latency
+maxmind_geopoint = Speedtest::GeoPoint.speedtest_geopoint
+filtered_servers = manager.sort_and_filter_server_list(servers, maxmind_geopoint, keep_num_servers: 20)
+
+# Run the transfers using 2 threads for the 2 servers with the lowest latency
+manager.run_each_transfer(servers, 2, num_threads: 2, download_size: 500, upload_size: 524288) do |transfer|
+  ap transfer
+end
 ```
 
 ## Interesting links

@@ -12,7 +12,6 @@ require_relative 'speedtest/servers'
 require_relative 'speedtest/transfers'
 
 module Speedtest
-  ThreadStatus = Struct.new(:error, :size)
 
   def self.init_logger(logger)
     @logger = logger

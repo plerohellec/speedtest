@@ -1,4 +1,6 @@
 module Speedtest
+  ThreadStatus = Struct.new(:error, :size)
+
   module Transfers
     Transfer = Struct.new(:server_url, :latency, :download_size_bytes, :download_time, :upload_size_bytes, :upload_time) do
       def failed?

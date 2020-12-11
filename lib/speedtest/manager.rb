@@ -21,7 +21,7 @@ module Speedtest
 
     def load_single_server(url)
       list = Speedtest::Servers::List.new
-      list << Speedtest::Servers::Server.new(url, Speedtest::GeoPoint.new(0,0))
+      list << Speedtest::Servers::Server.new(url)
     end
 
     def sort_and_filter_server_list(list, geopoint, options={})

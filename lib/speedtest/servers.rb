@@ -5,8 +5,9 @@ module Speedtest
 
       NUM_PINGS = 3
       HTTP_PING_TIMEOUT = 5
+      DUMMY_GEOPOINT = Speedtest::GeoPoint.new(0,0)
 
-      def initialize(url, geopoint)
+      def initialize(url, geopoint=DUMMY_GEOPOINT)
         @logger = Speedtest.logger
         @url = url
         @geopoint = geopoint
