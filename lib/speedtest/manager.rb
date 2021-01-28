@@ -2,6 +2,7 @@ module Speedtest
   class Manager
     SPEEDTEST_SERVER_LIST_URL = "https://c.speedtest.net/speedtest-servers-static.php"
     GLOBAL_SERVER_LIST_PATH = File.expand_path('../../../data/global_servers.yml', __FILE__)
+    DYNAMIC_SERVER_LIST_URL = "https://www.speedtest.net/api/js/servers?engine=js&https_functional=1"
 
     def initialize
       @logger = Speedtest.logger
@@ -15,6 +16,12 @@ module Speedtest
 
     def load_global_server_list(path = GLOBAL_SERVER_LIST_PATH)
       ll = Speedtest::Loaders::ServerList.new(path, :global)
+      ll.download
+      ll.parse
+    end
+
+    def load_dynamic_server_list(path = DYNAMIC_SERVER_LIST_URL)
+      ll = Speedtest::Loaders::ServerList.new(path, :dynamic)
       ll.download
       ll.parse
     end

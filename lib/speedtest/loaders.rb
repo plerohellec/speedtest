@@ -24,7 +24,7 @@ module Speedtest
 
       def download
         case @type
-        when :speedtest
+        when :speedtest, :dynamic
           resp = Curl.get(@url_or_path)
           if resp.response_code != 200
             @logger.error err = "Server list download failed: code=#{resp.response_code}"
@@ -42,6 +42,7 @@ module Speedtest
         case @type
         when :speedtest then parse_speedtest
         when :global then parse_global
+        when :dynamic then parse_dynamic
         else
           raise "Unknown server list type: #{@type}"
         end
@@ -68,6 +69,19 @@ module Speedtest
             url = "http://#{server['url']}"
             list << Servers::Server.new(url, geo)
           end
+        end
+        list
+      end
+
+      def parse_dynamic
+        servers = JSON.load(@page)
+        servers.sort_by! { |server| server['distance'] }
+        servers.reject! { |server| server['url'].nil? }
+
+        list = Servers::List.new
+        servers.each do |server|
+          geo = GeoPoint.new(server['lat'], server['lon'])
+          list << Servers::Server.new(server['url'], geo)
         end
         list
       end

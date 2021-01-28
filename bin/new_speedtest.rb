@@ -7,7 +7,7 @@ require_relative '../lib/speedtest'
 logger = Logger.new(STDOUT)
 Speedtest.init_logger(logger)
 
-ll = Speedtest::Loaders::ServerList.new("https://c.speedtest.net/speedtest-servers-static.php")
+ll = Speedtest::Loaders::ServerList.new("https://c.speedtest.net/speedtest-servers-static.php", :speedtest)
 ll.download
 servers = ll.parse
 
