@@ -46,6 +46,14 @@ module Speedtest
       merged.sort_by_latency
     end
 
+    def prepend_with_server(list, server, size=4)
+      return if list[0..size].include?(server)
+
+      list.delete(server)
+      list.prepend(server)
+      list
+    end
+
     def run_each_transfer(list, num_transfers, options={}, &block)
       list.each do |server|
         @logger.info "Starting transfers for #{server.url}"
