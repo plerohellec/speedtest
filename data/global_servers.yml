@@ -21,3 +21,6 @@ asia-east:
   - url: hk.ap.speedtest.i3d.net
 us-central:
   - url: speedtest.compton.net
+  - url: ook-chi-x1.puregig.net:8080
+  - url: chicago02.speedtest.windstream.net
+
