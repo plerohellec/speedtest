@@ -16,14 +16,14 @@ module Speedtest
     end
 
     class ServerList
-      def initialize(url_or_path, type)
+      def initialize(url_or_path, origin)
         @url_or_path = url_or_path
         @logger = Speedtest.logger
-        @type = type
+        @origin = origin
       end
 
       def download
-        case @type
+        case @origin
         when :speedtest, :dynamic
           resp = Curl.get(@url_or_path)
           if resp.response_code != 200
@@ -34,17 +34,17 @@ module Speedtest
         when :global
           @page = File.read(@url_or_path)
         else
-          raise "Unknown server list type: #{@type}"
+          raise "Unknown server list origin: #{@origin}"
         end
       end
 
       def parse
-        case @type
+        case @origin
         when :speedtest then parse_speedtest
         when :global then parse_global
         when :dynamic then parse_dynamic
         else
-          raise "Unknown server list type: #{@type}"
+          raise "Unknown server list origin: #{@origin}"
         end
       end
 
@@ -55,7 +55,7 @@ module Speedtest
         @page.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).each do |x|
           geo = GeoPoint.new(x[1], x[2])
           url = x[0].gsub(/\/speedtest\/.*/, '')
-          list << Servers::Server.new(url, geo)
+          list << Servers::Server.new(url, geo, @origin)
         end
         list
       end
@@ -67,7 +67,7 @@ module Speedtest
           servers.each do |server|
             geo = GeoPoint.new(0, 0)
             url = "http://#{server['url']}"
-            list << Servers::Server.new(url, geo)
+            list << Servers::Server.new(url, geo, @origin)
           end
         end
         list
@@ -81,7 +81,7 @@ module Speedtest
         list = Servers::List.new
         servers.each do |server|
           geo = GeoPoint.new(server['lat'], server['lon'])
-          list << Servers::Server.new(server['url'], geo)
+          list << Servers::Server.new(server['url'], geo, @origin)
         end
         list
       end

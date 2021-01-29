@@ -15,7 +15,10 @@ servers_global = manager.load_global_server_list
 server = servers_global.first
 ap server
 puts
-list = manager.prepend_with_server(servers_dynamic, server)
-ap list
+list = manager.prepend_with_server!(servers_dynamic, server)
+duplicate = servers_dynamic.first.clone
+list = manager.prepend_with_server!(servers_dynamic, duplicate)
+
+ap list.map(&:url)
 
 

@@ -42,12 +42,11 @@ module Speedtest
 
     def merge_server_lists(list1, list2)
       merged = list1.merge(list2)
-      merged.uniq! { |server| server.url }
       merged.sort_by_latency
     end
 
-    def prepend_with_server(list, server, size=4)
-      return if list[0..size].include?(server)
+    def prepend_with_server!(list, server, size=4)
+      return list if list[0..size].include?(server)
 
       list.delete(server)
       list.prepend(server)

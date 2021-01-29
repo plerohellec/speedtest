@@ -1,16 +1,21 @@
 module Speedtest
   module Servers
     class Server
-      attr_reader :url, :geopoint
+      attr_reader :url, :geopoint, :origin
 
       NUM_PINGS = 3
       HTTP_PING_TIMEOUT = 5
       DUMMY_GEOPOINT = Speedtest::GeoPoint.new(0,0)
 
-      def initialize(url, geopoint=DUMMY_GEOPOINT)
+      def initialize(url, geopoint=DUMMY_GEOPOINT, origin=nil)
         @logger = Speedtest.logger
         @url = url
         @geopoint = geopoint
+        @origin = origin
+      end
+
+      def ==(other)
+        self.url == other.url
       end
 
       def latency
@@ -58,7 +63,7 @@ module Speedtest
 
       def sort_by_distance(geopoint, keep=nil)
         sorted = List.new
-        sorted_list = sort_by { |server| server.distance(geopoint) }
+        sorted_list = sort { |a,b| a.distance(geopoint) <=> b.distance(geopoint) }
         sorted_list.each_with_index do |server, i|
           break if keep && i>=keep
           sorted.append(server)
@@ -68,7 +73,7 @@ module Speedtest
 
       def sort_by_latency
         sorted = List.new
-        sorted_list = sort_by { |server| server.latency }
+        sorted_list = sort { |a,b| a.latency <=> b.latency }
         sorted_list.each { |server| sorted.append(server) }
         sorted
       end
@@ -88,7 +93,9 @@ module Speedtest
       end
 
       def merge(server_list)
-        clone.concat(server_list)
+        list = clone.concat(server_list)
+        list.uniq!
+        list
       end
 
       def min_latency

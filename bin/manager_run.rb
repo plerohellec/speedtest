@@ -10,6 +10,7 @@ manager = Speedtest::Manager.new
 
 logger.info "Loading servers lists"
 servers_speedtest = manager.load_speedtest_server_list
+servers_dynamic = manager.load_dynamic_server_list
 servers_global = manager.load_global_server_list
 
 logger.info "Sorting servers lists"
@@ -34,9 +35,12 @@ end
 
 servers_global = manager.sort_and_filter_server_list(servers_global, geopoint,
                                                         keep_num_servers: 20, min_latency: 7, skip_fqdns: [])
+servers_dynamic = manager.sort_and_filter_server_list(servers_dynamic, geopoint,
+                                                        keep_num_servers: 20, min_latency: 7, skip_fqdns: [])
 
 servers = manager.merge_server_lists(servers_speedtest, servers_global)
-servers.each { |s| logger.debug [ s.url, s.geopoint, s.latency ].ai }
+servers = manager.merge_server_lists(servers, servers_dynamic)
+servers.each { |s| logger.debug [ s.url, s.geopoint, s.latency, s.origin ].ai }
 
 logger.info "Running transfers"
 manager.run_each_transfer(servers, 2, num_threads: 2, download_size: 500, upload_size: 524288) do |transfer|
