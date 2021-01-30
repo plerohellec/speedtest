@@ -6,6 +6,15 @@ module Speedtest
       def failed?
         download_size_bytes == 0 || upload_size_bytes == 0
       end
+
+      def speed(direction)
+        (self["#{direction}_size_bytes"] / self["#{direction}_time"] * 8 / 1_000_000).round
+      end
+
+      def pretty_print
+        server = server_url.gsub(/https?:\/\/([^\/]+).*/, '\1')
+        "#{'%-50s' % server} #{'%5d' % latency.round(2)}ms #{'%6.1f' % speed(:download)}Mbps #{'%6.1f' % speed(:upload)}Mbps"
+      end
     end
 
     class Mover

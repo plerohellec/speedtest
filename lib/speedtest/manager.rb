@@ -8,22 +8,30 @@ module Speedtest
       @logger = Speedtest.logger
     end
 
-    def load_speedtest_server_list(url = SPEEDTEST_SERVER_LIST_URL)
-      ll = Speedtest::Loaders::ServerList.new(url, :speedtest)
+    def load_server_list(list_name)
+      list = list_name.to_sym
+      ll = case list
+        when :speedtest
+          Speedtest::Loaders::ServerList.new(SPEEDTEST_SERVER_LIST_URL, list)
+        when :global
+          Speedtest::Loaders::ServerList.new(GLOBAL_SERVER_LIST_PATH, list)
+        when :dynamic
+          Speedtest::Loaders::ServerList.new(DYNAMIC_SERVER_LIST_URL, list)
+        end
       ll.download
       ll.parse
+    end 
+
+    def load_speedtest_server_list
+      load_server_list(:speedtest)
     end
 
-    def load_global_server_list(path = GLOBAL_SERVER_LIST_PATH)
-      ll = Speedtest::Loaders::ServerList.new(path, :global)
-      ll.download
-      ll.parse
+    def load_global_server_list
+      load_server_list(:global)
     end
 
-    def load_dynamic_server_list(path = DYNAMIC_SERVER_LIST_URL)
-      ll = Speedtest::Loaders::ServerList.new(path, :dynamic)
-      ll.download
-      ll.parse
+    def load_dynamic_server_list
+      load_server_list(:dynamic)
     end
 
     def load_single_server(url)

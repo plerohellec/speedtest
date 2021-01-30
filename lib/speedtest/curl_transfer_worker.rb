@@ -13,7 +13,7 @@ module Speedtest
     end
 
     def download
-      @logger.debug "  downloading: #{@url}"
+      #@logger.debug "  downloading: #{@url}"
       status = ThreadStatus.new(false, 0)
 
       begin
@@ -35,7 +35,7 @@ module Speedtest
     end
 
     def upload(content)
-      @logger.debug "  uploading: #{@url}"
+      #@logger.debug "  uploading: #{@url}"
       status = ThreadStatus.new(false, 0)
 
       begin

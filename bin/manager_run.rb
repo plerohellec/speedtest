@@ -43,7 +43,10 @@ servers = manager.merge_server_lists(servers, servers_dynamic)
 servers.each { |s| logger.debug [ s.url, s.geopoint, s.latency, s.origin ].ai }
 
 logger.info "Running transfers"
+transfers = []
 manager.run_each_transfer(servers, 2, num_threads: 2, download_size: 500, upload_size: 524288) do |transfer|
-  ap transfer
+  transfers << transfer
 end
+
+transfers.each { |t| puts t.pretty_print }
 
