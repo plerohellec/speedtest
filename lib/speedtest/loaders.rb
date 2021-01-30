@@ -81,7 +81,8 @@ module Speedtest
         list = Servers::List.new
         servers.each do |server|
           geo = GeoPoint.new(server['lat'], server['lon'])
-          list << Servers::Server.new(server['url'], geo, @origin)
+          url = server['url'].gsub(/\/speedtest\/.*/, '')
+          list << Servers::Server.new(url, geo, @origin)
         end
         list
       end

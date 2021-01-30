@@ -17,6 +17,7 @@ module Speedtest
       def ==(other)
         self.url == other.url
       end
+      alias_method :eql?, :==
 
       def latency
         calculate_latency unless @latency
@@ -94,7 +95,7 @@ module Speedtest
 
       def merge(server_list)
         list = clone.concat(server_list)
-        list.uniq!
+        list.uniq! { |server| server.url }
         list
       end
 

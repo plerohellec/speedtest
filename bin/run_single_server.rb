@@ -9,8 +9,8 @@ logger = Logger.new(STDOUT)
 Speedtest.init_logger(logger)
 
 server = Speedtest::Servers::Server.new(ENV.fetch('URL'))
-options = { num_threads: 2, download_size: 500, upload_size: 524288 }
+options = { num_threads: 2, download_size: 500, upload_size: 524288, min_transfer_secs: 10 }
 mover = Speedtest::Transfers::Mover.new(server, options)
 transfer = mover.run
-ap transfer
+puts transfer.pretty_print
 

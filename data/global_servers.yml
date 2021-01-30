@@ -17,7 +17,6 @@ us-west:
   - url: ookla1.enidok.sprintadp.net
   - url: speedtest.west.rr.com:8080
 asia-east:
-  - url: www.suntechspeedtest.com:8080
   - url: hk.ap.speedtest.i3d.net
 us-central:
   - url: speedtest.compton.net

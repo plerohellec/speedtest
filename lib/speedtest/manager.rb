@@ -20,7 +20,7 @@ module Speedtest
         end
       ll.download
       ll.parse
-    end 
+    end
 
     def load_speedtest_server_list
       load_server_list(:speedtest)

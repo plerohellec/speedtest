@@ -36,7 +36,8 @@ servers.each { |s| logger.debug [ s.url, s.geopoint, s.latency, s.origin ].ai }
 
 logger.info "Running transfers"
 transfers = []
-manager.run_each_transfer(servers, 2, num_threads: 2, download_size: 500, upload_size: 524288) do |transfer|
+options = { num_threads: 2, download_size: 500, upload_size: 524288, min_transfer_secs: 10 }
+manager.run_each_transfer(servers, 2, options) do |transfer|
   transfers << transfer
 end
 transfers.each { |t| puts t.pretty_print }
