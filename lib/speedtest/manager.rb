@@ -70,6 +70,13 @@ module Speedtest
           next
         end
 
+        if options[:min_latency]
+          if ((ml = server.calc_min_latency) < options[:min_latency])
+            @logger.warn "Skipping #{server.fqdn} because of min_latency: #{ml}"
+            next
+          end
+        end
+
         transfer = mover.run
         if transfer.failed?
           @logger.warn "Transfer for #{server.fqdn} failed: dl=#{transfer.download_size_bytes} ul=#{transfer.upload_size_bytes}"

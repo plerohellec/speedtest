@@ -3,6 +3,8 @@
 require 'amazing_print'
 require_relative '../lib/speedtest'
 
+MIN_LATENCY = 7
+
 logger = Logger.new(STDOUT)
 Speedtest.init_logger(logger)
 
@@ -19,9 +21,9 @@ local_ip = Speedtest::GeoPoint.local_ip
 ipstack_geopoint = Speedtest::GeoPoint.ipstack_geopoint(local_ip, ENV.fetch('IPSTACK_KEY'))
 
 servers_speedtest_maxmind = manager.sort_and_filter_server_list(servers_speedtest, maxmind_geopoint,
-                                                        keep_num_servers: 20, min_latency: 7, skip_fqdns: [])
+                                                        keep_num_servers: 20, min_latency: MIN_LATENCY, skip_fqdns: [])
 servers_speedtest_ipstack = manager.sort_and_filter_server_list(servers_speedtest, ipstack_geopoint,
-                                                        keep_num_servers: 20, min_latency: 7, skip_fqdns: [])
+                                                        keep_num_servers: 20, min_latency: MIN_LATENCY, skip_fqdns: [])
 
 geopoint = maxmind_geopoint
 servers_speedtest = servers_speedtest_maxmind
@@ -34,9 +36,9 @@ else
 end
 
 servers_global = manager.sort_and_filter_server_list(servers_global, geopoint,
-                                                        keep_num_servers: 20, min_latency: 7, skip_fqdns: [])
+                                                        keep_num_servers: 20, min_latency: MIN_LATENCY, skip_fqdns: [])
 servers_dynamic = manager.sort_and_filter_server_list(servers_dynamic, geopoint,
-                                                        keep_num_servers: 20, min_latency: 7, skip_fqdns: [])
+                                                        keep_num_servers: 20, min_latency: MIN_LATENCY, skip_fqdns: [])
 
 servers = manager.merge_server_lists(servers_speedtest, servers_global)
 servers = manager.merge_server_lists(servers, servers_dynamic)
@@ -44,7 +46,8 @@ servers.each { |s| logger.debug [ s.url, s.geopoint, s.latency, s.origin ].ai }
 
 logger.info "Running transfers"
 transfers = []
-manager.run_each_transfer(servers, 2, num_threads: 2, download_size: 500, upload_size: 524288) do |transfer|
+options = { num_threads: 2, download_size: 500, upload_size: 524288, min_transfer_secs: 10, min_latency: MIN_LATENCY }
+manager.run_each_transfer(servers, 4, options) do |transfer|
   transfers << transfer
 end
 

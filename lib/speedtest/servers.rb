@@ -20,8 +20,11 @@ module Speedtest
       alias_method :eql?, :==
 
       def latency
-        calculate_latency unless @latency
-        @latency
+        @latency ||= calculate_average_latency
+      end
+
+      def calc_min_latency
+        calculate_latencies.min * 1000
       end
 
       def distance(geopoint)
@@ -34,9 +37,7 @@ module Speedtest
 
       private
 
-      def calculate_latency
-        return if @latency
-
+      def calculate_latencies
         times = []
         1.upto(NUM_PINGS) do
           start = Time.new
@@ -51,8 +52,12 @@ module Speedtest
             times << 999999
           end
         end
-        times.sort
-        @latency = times[1, NUM_PINGS].inject(:+) * 1000 / NUM_PINGS # average in milliseconds
+        times
+      end
+
+      def calculate_average_latency
+        latencies = calculate_latencies
+        latencies[1, NUM_PINGS].inject(:+) * 1000 / NUM_PINGS # average in milliseconds
       end
     end
 

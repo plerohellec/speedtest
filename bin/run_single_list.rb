@@ -3,6 +3,8 @@
 require 'amazing_print'
 require_relative '../lib/speedtest'
 
+MIN_LATENCY = 7
+
 logger = Logger.new(STDOUT)
 Speedtest.init_logger(logger)
 
@@ -18,7 +20,7 @@ maxmind_geopoint = Speedtest::GeoPoint.speedtest_geopoint
 local_ip = Speedtest::GeoPoint.local_ip
 ipstack_geopoint = Speedtest::GeoPoint.ipstack_geopoint(local_ip, ENV.fetch('IPSTACK_KEY'))
 
-options = { keep_num_servers: 20, min_latency: 7, skip_fqdns: [] }
+options = { keep_num_servers: 20, min_latency: MIN_LATENCY, skip_fqdns: [] }
 servers_maxmind = manager.sort_and_filter_server_list(servers, maxmind_geopoint, options)
 servers_ipstack = manager.sort_and_filter_server_list(servers, ipstack_geopoint, options)
 
@@ -36,7 +38,7 @@ servers.each { |s| logger.debug [ s.url, s.geopoint, s.latency, s.origin ].ai }
 
 logger.info "Running transfers"
 transfers = []
-options = { num_threads: 2, download_size: 500, upload_size: 524288, min_transfer_secs: 10 }
+options = { num_threads: 2, download_size: 500, upload_size: 524288, min_transfer_secs: 10, min_latency: MIN_LATENCY }
 manager.run_each_transfer(servers, 2, options) do |transfer|
   transfers << transfer
 end
