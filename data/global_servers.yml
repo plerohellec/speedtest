@@ -8,7 +8,8 @@ us-east:
   - url: speedgauge2.optonline.net:8080
 eu-south:
   - url: speedtest.connesi.it:8080
-  - url: speedtest.fibra365.net
+  - url: speedtestbarcelona2.vodafone.es:8080
+  - url: sp1.alcort.es:8080
 us-south:
   - url: okc-speedtest.onenet.net
   - url: speedtest01.suddenlink.net:8080
