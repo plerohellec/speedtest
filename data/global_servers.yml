@@ -2,23 +2,32 @@ eu-west:
   - url: speedtest.eu.kamatera.com:8080
   - url: rennes3.speedtest.orange.fr
   - url: speedcheck-fra.kabeldeutschland.de
+  - url: speedtest.zeelandnet.nl:8080
+  - url: tng1.speedtest.mire.sfr.net
 us-east:
   - url: ashburn.speedtest.shentel.net
   - url: speedtest.planet.net:8080
   - url: speedgauge2.optonline.net:8080
+  - url: speedtest-ca-tor1-01.vpnproxymaster.com
+  - url: njspeedtest.rackdog.com
 eu-south:
   - url: speedtest.connesi.it:8080
   - url: speedtestbarcelona2.vodafone.es:8080
   - url: sp1.alcort.es:8080
+  - url: speedtest.zinca.io
 us-south:
   - url: okc-speedtest.onenet.net
   - url: speedtest01.suddenlink.net:8080
   - url: tul-speedtest.onenet.net:8080
+  - url: speedtest.catt.com:8080
 us-west:
   - url: ookla1.enidok.sprintadp.net
-  - url: speedtest.west.rr.com:8080
+  - url: speedtest.vc.shawcable.net:8080
+  - url: stosat-bvrt-01.sys.comcast.net:8080
+  - url: reflector.aberythmic.com:8080
 asia-east:
   - url: hk.ap.speedtest.i3d.net
+  - url: speedtest.virtualhosting.hk
 us-central:
   - url: speedtest.compton.net
   - url: ook-chi-x1.puregig.net:8080

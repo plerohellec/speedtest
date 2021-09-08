@@ -105,6 +105,7 @@ module Speedtest
       end
 
       def min_latency
+        return nil if self.none?
         server = self.min_by(&:latency).latency
       end
     end
