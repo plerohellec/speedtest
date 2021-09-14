@@ -4,6 +4,7 @@ eu-west:
   - url: speedcheck-fra.kabeldeutschland.de
   - url: speedtest.zeelandnet.nl:8080
   - url: tng1.speedtest.mire.sfr.net
+  - url: speedtest-lon.retn.net:8080
 us-east:
   - url: ashburn.speedtest.shentel.net
   - url: speedtest.planet.net:8080
