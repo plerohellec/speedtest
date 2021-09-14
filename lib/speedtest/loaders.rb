@@ -95,7 +95,7 @@ module Speedtest
         regions = @page
         regions.each do |region, servers|
           servers.each do |server|
-            geo = GeoPoint.new(server['lat'], server['lon'])
+            geo = GeoPoint.new(server['lat'] || 0, server['lon'] || 0)
             url = "http://#{server['host']}"
             list << Servers::Server.new(url, geo, @origin)
           end

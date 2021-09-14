@@ -8,7 +8,7 @@ module Speedtest
       @logger = Speedtest.logger
     end
 
-    def load_server_list(list_name, data)
+    def load_server_list(list_name, data=nil)
       list = list_name.to_sym
       ll = case list
         when :speedtest
@@ -60,6 +60,7 @@ module Speedtest
     end
 
     def prepend_with_server!(list, server, size=4)
+      return list unless server
       return list if list[0..size].include?(server)
 
       list.delete(server)
