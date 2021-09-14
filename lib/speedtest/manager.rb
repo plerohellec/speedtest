@@ -8,7 +8,7 @@ module Speedtest
       @logger = Speedtest.logger
     end
 
-    def load_server_list(list_name)
+    def load_server_list(list_name, data)
       list = list_name.to_sym
       ll = case list
         when :speedtest
@@ -17,6 +17,8 @@ module Speedtest
           Speedtest::Loaders::ServerList.new(GLOBAL_SERVER_LIST_PATH, list)
         when :dynamic
           Speedtest::Loaders::ServerList.new(DYNAMIC_SERVER_LIST_URL, list)
+        when :vpsb
+          Speedtest::Loaders::ServerList.new(data, list)
         end
       ll.download
       ll.parse
@@ -32,6 +34,10 @@ module Speedtest
 
     def load_dynamic_server_list
       load_server_list(:dynamic)
+    end
+
+    def load_vpsb_server_list(data)
+      load_server_list(:vpsb, data)
     end
 
     def load_single_server(url)

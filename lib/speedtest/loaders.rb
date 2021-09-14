@@ -16,8 +16,8 @@ module Speedtest
     end
 
     class ServerList
-      def initialize(url_or_path, origin)
-        @url_or_path = url_or_path
+      def initialize(url_or_path_or_string, origin)
+        @url_or_path_or_string = url_or_path_or_string
         @logger = Speedtest.logger
         @origin = origin
       end
@@ -25,14 +25,16 @@ module Speedtest
       def download
         case @origin
         when :speedtest, :dynamic
-          resp = Curl.get(@url_or_path)
+          resp = Curl.get(@url_or_path_or_string)
           if resp.response_code != 200
             @logger.error err = "Server list download failed: code=#{resp.response_code}"
             raise err
           end
           @page = resp.body_str
         when :global
-          @page = File.read(@url_or_path)
+          @page = File.read(@url_or_path_or_string)
+        when :vpsb
+          @page = @url_or_path_or_string
         else
           raise "Unknown server list origin: #{@origin}"
         end
@@ -43,6 +45,7 @@ module Speedtest
         when :speedtest then parse_speedtest
         when :global then parse_global
         when :dynamic then parse_dynamic
+        when :vpsb then parse_vpsb
         else
           raise "Unknown server list origin: #{@origin}"
         end
@@ -83,6 +86,19 @@ module Speedtest
           geo = GeoPoint.new(server['lat'], server['lon'])
           url = server['url'].gsub(/\/speedtest\/.*/, '')
           list << Servers::Server.new(url, geo, @origin)
+        end
+        list
+      end
+
+      def parse_vpsb
+        list = Servers::List.new
+        regions = @page
+        regions.each do |region, servers|
+          servers.each do |server|
+            geo = GeoPoint.new(server['lat'], server['lon'])
+            url = "http://#{server['host']}"
+            list << Servers::Server.new(url, geo, @origin)
+          end
         end
         list
       end
