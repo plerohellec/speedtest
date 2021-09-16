@@ -39,3 +39,6 @@ manager.run_each_transfer(servers, 2, num_threads: 2, download_size: 500, upload
   ap transfer
 end
 
+logger.info "Errors:"
+logger.info manager.error_servers.ai
+

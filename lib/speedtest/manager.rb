@@ -6,6 +6,7 @@ module Speedtest
 
     def initialize
       @logger = Speedtest.logger
+      @error_servers = []
     end
 
     def load_server_list(list_name, data=nil)
@@ -74,6 +75,7 @@ module Speedtest
         mover = Speedtest::Transfers::Mover.new(server, options)
         unless mover.validate_server_transfer
           @logger.warn "Rejecting #{server.fqdn}"
+          @error_servers << server
           next
         end
 
@@ -87,6 +89,7 @@ module Speedtest
         transfer = mover.run
         if transfer.failed?
           @logger.warn "Transfer for #{server.fqdn} failed: dl=#{transfer.download_size_bytes} ul=#{transfer.upload_size_bytes}"
+          @error_servers << server
           next
         end
 
@@ -103,6 +106,10 @@ module Speedtest
         transfers << transfer
       end
       transfers
+    end
+
+    def error_servers
+      @error_servers.map(&:fqdn)
     end
   end
 end
