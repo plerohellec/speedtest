@@ -23,6 +23,10 @@ module Speedtest
         @latency ||= calculate_average_latency
       end
 
+      def min_latency
+        @min_latency ||= calc_min_latency
+      end
+
       def calc_min_latency
         calculate_latencies.min * 1000
       end
@@ -88,7 +92,11 @@ module Speedtest
         filtered = clone
 
         if options[:min_latency]
-          filtered.delete_if { |server| server.latency<options[:min_latency] }
+          filtered.delete_if do |server|
+            too_close = (server.min_latency < options[:min_latency])
+            @logger.info "Skipping #{server.url} because latency #{server.latency}<#{options[:min_latency]}" if too_close
+            too_close
+          end
         end
 
         if options[:skip_fqdns]

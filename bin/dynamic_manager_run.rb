@@ -31,7 +31,7 @@ else
   logger.info "Using maxmind geopoint #{servers_dynamic_maxmind.min_latency} <= #{servers_dynamic_ipstack.min_latency}"
 end
 
-servers_dynamic.each { |s| logger.debug [ s.url, s.geopoint, s.latency ].ai }
+servers_dynamic.each { |s| logger.debug [ s.url, s.geopoint, s.min_latency ].ai }
 
 logger.info "Running transfers"
 manager.run_each_transfer(servers_dynamic, 2, num_threads: 2, download_size: 500, upload_size: 524288) do |transfer|
