@@ -81,7 +81,7 @@ module Speedtest
 
         if options[:min_latency]
           if ((ml = server.calc_min_latency) < options[:min_latency])
-            @logger.warn "Skipping #{server.fqdn} because of min_latency: #{ml}"
+            @logger.warn "Skipping #{server.fqdn} because of runtime min_latency: #{ml}"
             next
           end
         end

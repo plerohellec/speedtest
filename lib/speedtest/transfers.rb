@@ -25,7 +25,7 @@ module Speedtest
         @upload_size   = options[:upload_size]
         @num_threads   = options[:num_threads]           || 10
         @min_transfer_secs = options[:min_transfer_secs] || 10
-        @transfer = Transfer.new(@server.url, @server.latency)
+        @transfer = Transfer.new(@server.url, @server.min_latency)
       end
 
       def run

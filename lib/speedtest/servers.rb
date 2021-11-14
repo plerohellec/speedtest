@@ -43,7 +43,7 @@ module Speedtest
 
       def calculate_latencies
         times = []
-        1.upto(NUM_PINGS) do
+        0.upto(NUM_PINGS) do
           start = Time.new
           begin
             Curl.get("#{@url}/speedtest/latency.txt") do |c|
@@ -94,7 +94,7 @@ module Speedtest
         if options[:min_latency]
           filtered.delete_if do |server|
             too_close = (server.min_latency < options[:min_latency])
-            @logger.info "Skipping #{server.url} because latency #{server.latency}<#{options[:min_latency]}" if too_close
+            @logger.info "Skipping #{server.url} because latency #{server.min_latency}<#{options[:min_latency]}" if too_close
             too_close
           end
         end
