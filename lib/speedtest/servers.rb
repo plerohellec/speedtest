@@ -1,17 +1,18 @@
 module Speedtest
   module Servers
     class Server
-      attr_reader :url, :geopoint, :origin
+      attr_reader :url, :geopoint, :origin, :grade
 
       NUM_PINGS = 3
       HTTP_PING_TIMEOUT = 5
       DUMMY_GEOPOINT = Speedtest::GeoPoint.new(0,0)
 
-      def initialize(url, geopoint=DUMMY_GEOPOINT, origin=nil)
+      def initialize(url, geopoint: DUMMY_GEOPOINT, origin:, grade:)
         @logger = Speedtest.logger
         @url = url
         @geopoint = geopoint
         @origin = origin
+        @grade = grade
       end
 
       def ==(other)

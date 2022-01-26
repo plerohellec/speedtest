@@ -58,7 +58,7 @@ module Speedtest
         @page.scan(/<server url="([^"]*)" lat="([^"]*)" lon="([^"]*)/).each do |x|
           geo = GeoPoint.new(x[1], x[2])
           url = x[0].gsub(/\/speedtest\/.*/, '')
-          list << Servers::Server.new(url, geo, @origin)
+          list << Servers::Server.new(url, geopoint: geo, origin: @origin)
         end
         list
       end
@@ -70,7 +70,7 @@ module Speedtest
           servers.each do |server|
             geo = GeoPoint.new(0, 0)
             url = "http://#{server['url']}"
-            list << Servers::Server.new(url, geo, @origin)
+            list << Servers::Server.new(url, geopoint: geo, origin: @origin)
           end
         end
         list
@@ -85,7 +85,7 @@ module Speedtest
         servers.each do |server|
           geo = GeoPoint.new(server['lat'], server['lon'])
           url = server['url'].gsub(/\/speedtest\/.*/, '')
-          list << Servers::Server.new(url, geo, @origin)
+          list << Servers::Server.new(url, geopoint: geo, origin: @origin)
         end
         list
       end
@@ -97,7 +97,7 @@ module Speedtest
           servers.each do |server|
             geo = GeoPoint.new(server['lat'] || 0, server['lon'] || 0)
             url = "http://#{server['host']}"
-            list << Servers::Server.new(url, geo, @origin)
+            list << Servers::Server.new(url, geopoint: geo, origin: @origin, grade: server['grade'])
           end
         end
         list

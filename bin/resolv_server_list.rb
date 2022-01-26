@@ -33,7 +33,7 @@ def validate_server(domain)
   url = domain
   url = "http://#{domain}" unless domain =~ /^http/
 
-  server = Speedtest::Servers::Server.new(url, nil, logger)
+  server = Speedtest::Servers::Server.new(url)
   mover = Speedtest::Transfers::Mover.new(server, logger)
   mover.validate_server_transfer
 end
