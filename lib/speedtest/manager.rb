@@ -55,9 +55,16 @@ module Speedtest
       latency_sorted.filter(options)
     end
 
-    def merge_server_lists(list1, list2)
+    def merge_server_lists(list1, list2, sort_by: :latency)
       merged = list1.merge(list2)
-      merged.sort_by_latency
+      case sort_by
+      when :graded_latency
+        merged.sort_by_graded_latency
+      when :latency
+        merged.sort_by_latency
+      else
+        raise "Invalid sort_by: #{sort_by}"
+      end
     end
 
     def prepend_with_server!(list, server, size=4)

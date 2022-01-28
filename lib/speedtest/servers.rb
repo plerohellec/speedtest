@@ -7,12 +7,16 @@ module Speedtest
       HTTP_PING_TIMEOUT = 5
       DUMMY_GEOPOINT = Speedtest::GeoPoint.new(0,0)
 
-      def initialize(url, geopoint: DUMMY_GEOPOINT, origin:, grade:)
+      MAX_LATENCY_FOR_BONUS = 12
+      MIN_GRADE_FOR_BONUS = 5.20
+      LATENCY_BONUS = 0.7
+
+      def initialize(url, geopoint: DUMMY_GEOPOINT, origin: nil, grade: nil)
         @logger = Speedtest.logger
         @url = url
         @geopoint = geopoint
         @origin = origin
-        @grade = grade
+        @grade = grade.to_f > 0.0 ? grade.to_f : nil
       end
 
       def ==(other)
@@ -38,6 +42,13 @@ module Speedtest
 
       def fqdn
         @url.gsub(/https?:\/\/([^\/\:]+).*/, '\1')
+      end
+
+      def graded_latency
+        return latency unless origin == :vpsb
+        return latency unless (grade && grade > MIN_GRADE_FOR_BONUS)
+        return latency if latency > MAX_LATENCY_FOR_BONUS
+        latency * LATENCY_BONUS
       end
 
       private
@@ -85,6 +96,13 @@ module Speedtest
       def sort_by_latency
         sorted = List.new
         sorted_list = sort { |a,b| a.latency <=> b.latency }
+        sorted_list.each { |server| sorted.append(server) }
+        sorted
+      end
+
+      def sort_by_graded_latency
+        sorted = List.new
+        sorted_list = sort { |a,b| a.graded_latency <=> b.graded_latency }
         sorted_list.each { |server| sorted.append(server) }
         sorted
       end

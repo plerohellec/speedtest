@@ -32,11 +32,11 @@ servers_maxmind = manager.sort_and_filter_server_list(servers, maxmind_geopoint,
 geopoint = maxmind_geopoint
 servers = servers_maxmind
 
-servers.each { |s| logger.debug [ s.url, s.geopoint, s.latency ].ai }
+servers.each { |s| logger.debug [ s.url, s.geopoint, s.latency, s.grade, s.graded_latency ].ai }
 
 logger.info "Running transfers"
 manager.run_each_transfer(servers, 2, num_threads: 2, download_size: 500, upload_size: 524288) do |transfer|
-  ap transfer
+  logger.debug transfer.pretty_print
 end
 
 logger.info "Errors:"
