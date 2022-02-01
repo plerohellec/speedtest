@@ -42,7 +42,7 @@ servers_dynamic = manager.sort_and_filter_server_list(servers_dynamic, geopoint,
 
 servers = manager.merge_server_lists(servers_speedtest, servers_global)
 servers = manager.merge_server_lists(servers, servers_dynamic)
-servers.each { |s| logger.debug [ s.url, s.geopoint, s.latency, s.origin ].ai }
+servers.each { |s| logger.debug [ s.url, s.geopoint, s.latency, s.grade, s.graded_latency, s.origin ].ai }
 
 logger.info "Running transfers"
 transfers = []

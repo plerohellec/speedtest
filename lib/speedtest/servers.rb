@@ -7,7 +7,7 @@ module Speedtest
       HTTP_PING_TIMEOUT = 5
       DUMMY_GEOPOINT = Speedtest::GeoPoint.new(0,0)
 
-      MAX_LATENCY_FOR_BONUS = 12
+      MAX_LATENCY_FOR_BONUS = 13
       MIN_GRADE_FOR_BONUS = 5.20
       LATENCY_BONUS = 0.7
 
