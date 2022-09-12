@@ -24,15 +24,19 @@ servers_speedtest_maxmind = manager.sort_and_filter_server_list(servers_speedtes
                                                         keep_num_servers: 20, min_latency: MIN_LATENCY, skip_fqdns: [])
 servers_speedtest_ipstack = manager.sort_and_filter_server_list(servers_speedtest, ipstack_geopoint,
                                                         keep_num_servers: 20, min_latency: MIN_LATENCY, skip_fqdns: [])
-
-geopoint = maxmind_geopoint
-servers_speedtest = servers_speedtest_maxmind
-if servers_speedtest_ipstack.min_latency < servers_speedtest_maxmind.min_latency
-  logger.info "Using ipstack geopoint #{servers_speedtest_ipstack.min_latency} < #{servers_speedtest_maxmind.min_latency}"
-  geopoint = ipstack_geopoint
-  servers_speedtest = servers_speedtest_ipstack
+if servers_speedtest.any?
+  geopoint = maxmind_geopoint
+  servers_speedtest = servers_speedtest_maxmind
+  if servers_speedtest_ipstack.min_latency < servers_speedtest_maxmind.min_latency
+    logger.info "Using ipstack geopoint #{servers_speedtest_ipstack.min_latency} < #{servers_speedtest_maxmind.min_latency}"
+    geopoint = ipstack_geopoint
+    servers_speedtest = servers_speedtest_ipstack
+  else
+    logger.info "Using maxmind geopoint #{servers_speedtest_maxmind.min_latency} <= #{servers_speedtest_ipstack.min_latency}"
+  end
 else
-  logger.info "Using maxmind geopoint #{servers_speedtest_maxmind.min_latency} <= #{servers_speedtest_ipstack.min_latency}"
+  logger.info "servers_speedtest is empty: using ipstack geopoint"
+  geopoint = ipstack_geopoint
 end
 
 servers_global = manager.sort_and_filter_server_list(servers_global, geopoint,

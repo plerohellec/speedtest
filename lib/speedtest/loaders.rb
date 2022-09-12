@@ -38,9 +38,14 @@ module Speedtest
         else
           raise "Unknown server list origin: #{@origin}"
         end
+      rescue => e
+        @logger.error "download failed for #{@url_or_path_or_string}. #{e.class} - #{e}"
+        @page = nil
       end
 
       def parse
+        return Servers::List.new unless @page
+
         case @origin
         when :speedtest then parse_speedtest
         when :global then parse_global
