@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'amazing_print'
+require 'debug'
 require_relative '../lib/speedtest'
 
 logger = Logger.new(STDOUT)
