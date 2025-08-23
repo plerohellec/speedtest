@@ -48,6 +48,7 @@ module Speedtest
         return latency unless origin == :vpsb
         return latency unless (grade && grade > MIN_GRADE_FOR_BONUS)
         return latency if latency > MAX_LATENCY_FOR_BONUS
+        @logger.debug "Applying graded_latency bonus to #{url}: latency=#{latency} graded_latency=#{latency * LATENCY_BONUS}"
         latency * LATENCY_BONUS
       end
 
