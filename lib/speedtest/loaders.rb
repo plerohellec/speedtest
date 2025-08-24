@@ -73,8 +73,15 @@ module Speedtest
         regions = YAML.load(@page)
         regions.each do |region, servers|
           servers.each do |server|
-            geo = GeoPoint.new(0, 0)
-            url = "http://#{server['url']}"
+            geo = GeoPoint.new(server['lat'], server['lon'])
+            if server['url']
+              url = "http://#{server['url']}"
+            elsif server['hostname']
+              url = "http://#{server['hostname']}"
+            else
+              @logger.warn "no hostname info for #{server.ai}"
+              next
+            end
             list << Servers::Server.new(url, geopoint: geo, origin: @origin)
           end
         end

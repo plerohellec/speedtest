@@ -18,7 +18,7 @@ module Speedtest
           Speedtest::Loaders::ServerList.new(GLOBAL_SERVER_LIST_PATH, list)
         when :dynamic
           Speedtest::Loaders::ServerList.new(DYNAMIC_SERVER_LIST_URL, list)
-        when :vpsb
+        when :vpsb, :vpsb_global_best
           Speedtest::Loaders::ServerList.new(data, list)
         end
       ll.download

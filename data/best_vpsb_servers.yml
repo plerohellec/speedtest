@@ -1,0 +1,123 @@
+asia-east:
+- hostname: speedtest.virtualhosting.hk
+  lat: 22.2483100891113
+  lon: 114.152397155762
+  region: asia-east
+- hostname: speedtest2.macau.ctm.net
+  lat: 22.2035598754883
+  lon: 113.545097351074
+  region: asia-east
+eu-north:
+- hostname: speedtest.gavlenet.com
+  lat: 60.6749
+  lon: 17.1413
+  region: eu-north
+- hostname: speedtest.connect.ax
+  lat: 60.80030822753906
+  lon: 21.4089298248291
+  region: eu-north
+us-east:
+- hostname: speedtest.fiberlync.net
+  lat: 38.2169799804688
+  lon: -78.0365524291992
+  region: us-east
+- hostname: ashburn.speedtest.shentel.net
+  lat: 38.8400192260742
+  lon: -78.6420364379883
+  region: us-east
+- hostname: speedgauge2.optonline.net
+  lat: 40.7589111328125
+  lon: -73.9790191650391
+  region: us-east
+- hostname: stosat-balt-01.sys.comcast.net
+  lat: 39.2833
+  lon: -76.6167
+  region: us-east
+- hostname: edinburg.speedtest.shentel.net
+  lat: 38.8400192260742
+  lon: -78.6420364379883
+  region: us-east
+- hostname: speedtest-zion.fireflyva.com
+  lat: 37.7913093566895
+  lon: -78.8694534301758
+  region: us-east
+us-west:
+- hostname: reflector.aberythmic.com
+  lat: 33.9762306213379
+  lon: -118.417098999023
+  region: us-west
+- hostname: speedtest01.suddenlink.net
+  lat: 33.5093803405762
+  lon: -112.082550048828
+  region: us-west
+- hostname: stosat-scla-01.sys.comcast.net
+  lat: 37.33052825927734
+  lon: -121.8382263183593
+  region: us-west
+- hostname: spt01mtpkca.mtpk.ca.charter.com
+  lat: 34.0525817871094
+  lon: -118.147789001465
+  region: us-west
+eu-west:
+- hostname: speedtest-lon.retn.net
+  lat: 51.5111083984375
+  lon: -0.0399999991059303
+  region: eu-west
+- hostname: fra.speedtest.clouvider.net
+  lat: 50.1109008789063
+  lon: 8.68210029602051
+  region: eu-west
+- hostname: speedtest.eu.kamatera.com
+  lat: 52.3090515136719
+  lon: 4.94018983840942
+  region: eu-west
+- hostname: speedtest.schlueter-server.de
+  lat: 51.5120086669922
+  lon: 8.48826026916504
+  region: eu-west
+us-central:
+- hostname: spt01aldlmi.aldl.mi.charter.com
+  lat: 42.9791984558105
+  lon: -85.9382705688477
+  region: us-central
+- hostname: ookla1.mtco.com
+  lat: 40.8133697509766
+  lon: -89.4090805053711
+  region: us-central
+- hostname: speedtest.as53597.net
+  lat: 43.0064086914063
+  lon: -89.2879867553711
+  region: us-central
+eu-east:
+- hostname: speedtest.opcnet.hu
+  lat: 46.8964
+  lon: 19.6897
+  region: eu-east
+- hostname: speedtestba.antik.sk
+  lat: 48.71649169921875
+  lon: 21.27996063232422
+  region: eu-east
+us-nwest:
+- hostname: speedtest.vc.shawcable.net
+  lat: 49.2927093505859
+  lon: -123.047737121582
+  region: us-nwest
+- hostname: stosat-bvrt-01.sys.comcast.net
+  lat: 44.5644111633301
+  lon: -123.28003692627
+  region: us-nwest
+eu-spain:
+- hostname: speedtest.mad.adamo.es
+  lat: 40.4
+  lon: -3.68
+  region: eu-spain
+- hostname: speedmad.sarenet.es
+  lat: 40.4261817932129
+  lon: -3.68513989448547
+  region: eu-spain
+us-south:
+- hostname: tul-speedtest.onenet.net
+  lat: 35.4746589660645
+  lon: -97.5031585693359
+  region: us-south
+

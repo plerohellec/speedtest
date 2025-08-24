@@ -45,8 +45,8 @@ class PingLocator
       }
     end
 
-    # Sort by distance (closest first)
-    results.sort_by { |result| result[:distance] }
+    # Sort by RTT (lowest first)
+    results.sort_by { |result| result[:rtt] }
   end
 
   def ping_server(server)
@@ -149,7 +149,7 @@ class PingLocator
     selected.each_with_index do |result, i|
       server = result[:server]
       @logger.info "  #{i+1}. #{server.url} (lat: #{server.geopoint.lat}, lon: #{server.geopoint.lon})"
-      @logger.info "distance: #{'%.1f' % result[:distance]/1000}km)"
+      @logger.info "distance: #{'%.1f' % (result[:distance]/1000)}km)"
     end
 
     selected
